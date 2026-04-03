@@ -50,54 +50,60 @@ export default function DashboardPage() {
     }}>
       {/* 상단 */}
       <div style={{
-        display: 'flex',
-        alignItems: 'flex-end',
-        padding: '48px 40px 0',
-        gap: '32px',
+        padding: '40px 24px 0',
       }}>
-        <div style={{ position: 'relative', width: 180, height: 180, flexShrink: 0 }}>
-          <Image
-            src={MOOD_IMAGE[mood]}
-            alt="KIN"
-            fill
-            style={{ objectFit: 'contain', objectPosition: 'bottom' }}
-            priority
-          />
-        </div>
-        <div style={{ paddingBottom: '16px' }}>
-          <p style={{ color: '#FFE500', fontSize: '13px', letterSpacing: '3px', margin: '0 0 8px' }}>
-            KIN
-          </p>
-          <p style={{ color: '#888', fontSize: '13px', margin: 0 }}>
-            {loading ? '...' : `경험 ${expCount}개 쌓임`}
-          </p>
+        {/* KIN 이미지 + 정보 */}
+        <div style={{
+          display: 'flex',
+          alignItems: 'flex-end',
+          gap: '20px',
+          marginBottom: '20px',
+        }}>
+          <div style={{ position: 'relative', width: 140, height: 140, flexShrink: 0 }}>
+            <Image
+              src={MOOD_IMAGE[mood]}
+              alt="KIN"
+              fill
+              style={{ objectFit: 'contain', objectPosition: 'bottom' }}
+              priority
+            />
+          </div>
+          <div style={{ paddingBottom: '12px' }}>
+            <p style={{ color: '#FFE500', fontSize: '13px', letterSpacing: '3px', margin: '0 0 8px' }}>
+              KIN
+            </p>
+            <p style={{ color: '#888', fontSize: '13px', margin: 0 }}>
+              {loading ? '...' : `경험 ${expCount}개 쌓임`}
+            </p>
+          </div>
         </div>
 
+        {/* 말 걸기 버튼 — 가로 전체 */}
         <button
           onClick={() => router.push('/chat')}
           style={{
-            marginLeft: 'auto',
-            marginBottom: '16px',
+            width: '100%',
             background: 'transparent',
             border: '1px solid #FFE500',
             color: '#FFE500',
-            padding: '10px 24px',
+            padding: '12px 0',
             cursor: 'pointer',
             fontSize: '14px',
             fontFamily: 'monospace',
             letterSpacing: '1px',
+            marginBottom: '24px',
           }}
         >
           말 걸기 →
         </button>
       </div>
 
-      <div style={{ height: '1px', background: '#222', margin: '24px 40px 0' }} />
+      <div style={{ height: '1px', background: '#222', margin: '0 24px' }} />
 
       {/* 본문 */}
       <div style={{
         flex: 1,
-        padding: '40px',
+        padding: '32px 24px',
         display: 'flex',
         flexDirection: 'column',
         gap: '52px',
