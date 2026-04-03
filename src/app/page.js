@@ -84,18 +84,24 @@ function SmartBtn({ label, onClick, variant='default' }) {
 
 // 모바일 전체화면 모달
 function MobileModal({ open, onClose, children }) {
-  const [mounted, setMounted] = useState(false)
+  const [visible, setVisible] = useState(open)
+  const timerRef = useRef(null)
 
   useEffect(() => {
-    if (open) setMounted(true)
     document.body.style.overflow = open ? 'hidden' : ''
-    // 닫힌 후 애니메이션(400ms) 완료 후 unmount
-    let t
-    if (!open && mounted) t = setTimeout(() => setMounted(false), 420)
-    return () => { clearTimeout(t); document.body.style.overflow = '' }
+    if (open) {
+      clearTimeout(timerRef.current)
+      setVisible(true)
+    } else {
+      timerRef.current = setTimeout(() => setVisible(false), 420)
+    }
+    return () => {
+      clearTimeout(timerRef.current)
+      document.body.style.overflow = ''
+    }
   }, [open])
 
-  if (!mounted && !open) return null
+  if (!visible && !open) return null
 
   return (
     <div style={{
@@ -109,7 +115,11 @@ function MobileModal({ open, onClose, children }) {
         transition:'background 0.3s ease',
       }}/>
       {/* 패널 */}
-      <div style={{
+      <div
+        onTouchStart={e => e.stopPropagation()}
+        onTouchMove={e => e.stopPropagation()}
+        onTouchEnd={e => e.stopPropagation()}
+        style={{
         position:'absolute', bottom:0, left:0, right:0,
         background:'#0b0b09',
         borderTop:`1px solid #252523`,
@@ -118,6 +128,7 @@ function MobileModal({ open, onClose, children }) {
         transform: open ? 'translateY(0)' : 'translateY(100%)',
         transition:'transform 0.38s cubic-bezier(0.32,0.72,0,1)',
         display:'flex', flexDirection:'column',
+        overscrollBehavior:'contain',
       }}>
         {/* 핸들 */}
         <div style={{ padding:'14px 0 0', display:'flex', justifyContent:'center', flexShrink:0 }}>
@@ -426,16 +437,6 @@ export default function DashboardPage() {
         <div style={{ flex:1, display:'flex', alignItems:'center', justifyContent:'center' }}>
           <span style={{ fontSize:11, color:'#2a2a28', fontFamily:FONT, letterSpacing:'0.2em' }}>loading</span>
         </div>
-      ) : isMobile ? (
-        <div style={{ display:'flex', flexWrap:'wrap', gap:10, lineHeight:1.8 }}>
-          {topics.slice(0,25).map(t=>(
-            <span key={t.word} onClick={()=>setSelectedTopic(selectedTopic?.word===t.word?null:t)}
-              style={{ fontSize:Math.max(14,Math.min(26,11+t.count*1.6)), color:t.salience>=0.7?YELLOW:'#ccc',
-                opacity:selectedTopic&&selectedTopic.word!==t.word?0.2:1, cursor:'pointer',
-                background:selectedTopic?.word===t.word?'rgba(255,229,0,0.07)':'transparent',
-                padding:'2px 6px', transition:'all 0.2s', fontFamily:FONT, borderRadius:4 }}>{t.word}</span>
-          ))}
-        </div>
       ) : (
         <div style={{ flex:1 }}>
           <WordCloud topics={topics} experiences={data?.recentExperiences||[]} onTopicClick={t=>setSelectedTopic(selectedTopic?.word===t.word?null:t)} />
@@ -527,7 +528,7 @@ export default function DashboardPage() {
               <Num label="미처리" value={stat.unprocessed} color={stat.unprocessed>0?'#a55':'#2a2a28'} size={22} />
             </div>
             {Object.entries(stat.byType).slice(0,4).map(([t,c])=>(
-              <Bar key={t} label={t.replace('scenario_','').replace('image_','')} value={c} max={stat.total} color="#2a2a28" />
+              <Bar key={t} label={t.replace('scenario_','').replace('image_','')} value={c} max={stat.total} color="#3a3a36" />
             ))}
           </div>
         ))}

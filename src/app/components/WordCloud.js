@@ -35,14 +35,14 @@ function computeCooccurrence(topics, experiences) {
 }
 
 // 3D → 2D 투영
-function project3D(x, y, z, rotX, rotY, W, H, fov = 420) {
+function project3D(x, y, z, rotX, rotY, W, H, zoom = 1, fov = 420) {
   // Y축 회전
   const rx = x * Math.cos(rotY) + z * Math.sin(rotY)
   const rz = -x * Math.sin(rotY) + z * Math.cos(rotY)
   // X축 회전
   const ry = y * Math.cos(rotX) - rz * Math.sin(rotX)
   const fz = y * Math.sin(rotX) + rz * Math.cos(rotX)
-  const scale = fov / (fov + fz + 150)
+  const scale = fov / (fov + fz + 150) * zoom
   return { px: W / 2 + rx * scale, py: H / 2 + ry * scale, scale, fz }
 }
 
@@ -52,6 +52,8 @@ export default function WordCloud3D({ topics = [], experiences = [], onTopicClic
     rotX: 0.25, rotY: 0.4,
     dragging: false, lastX: 0, lastY: 0,
     dragDist: 0,
+    zoom: 1.0,
+    pinchDist: 0,
     nodes: [], edges: [],
     animFrame: null,
     W: 600, H: 340,
@@ -120,15 +122,12 @@ export default function WordCloud3D({ topics = [], experiences = [], onTopicClic
 
     ctx.clearRect(0, 0, W * dpr, H * dpr)
 
-    if (!nodes.length) {
-      s.animFrame = requestAnimationFrame(draw)
-      return
-    }
+    if (!nodes.length) return
 
     // 투영
     const proj = nodes.map(n => ({
       ...n,
-      ...project3D(n.x, n.y, n.z, s.rotX, s.rotY, W, H),
+      ...project3D(n.x, n.y, n.z, s.rotX, s.rotY, W, H, s.zoom),
     }))
 
     // ── 연결선 그리기 ───────────────────────────────────────
@@ -182,6 +181,22 @@ export default function WordCloud3D({ topics = [], experiences = [], onTopicClic
     }
   }, [draw])
 
+  // ── 휠/트랙패드 핀치 — passive:false로 직접 등록 ─────────────
+  useEffect(() => {
+    const canvas = canvasRef.current
+    if (!canvas) return
+    const handler = e => {
+      if (e.ctrlKey) {
+        e.preventDefault()
+        const s = state.current
+        const delta = e.deltaY > 0 ? 0.95 : 1.05
+        s.zoom = Math.max(0.3, Math.min(3.0, s.zoom * delta))
+      }
+    }
+    canvas.addEventListener('wheel', handler, { passive: false })
+    return () => canvas.removeEventListener('wheel', handler)
+  }, [])
+
   // ── 마우스 이벤트 ───────────────────────────────────────────
   const onMouseDown = e => {
     const s = state.current
@@ -201,19 +216,42 @@ export default function WordCloud3D({ topics = [], experiences = [], onTopicClic
 
   // ── 터치 이벤트 ─────────────────────────────────────────────
   const onTouchStart = e => {
-    const s = state.current; const t = e.touches[0]
-    s.dragging = true; s.lastX = t.clientX; s.lastY = t.clientY
+    const s = state.current
+    if (e.touches.length === 2) {
+      // 2-finger pinch 시작
+      const dx = e.touches[0].clientX - e.touches[1].clientX
+      const dy = e.touches[0].clientY - e.touches[1].clientY
+      s.pinchDist = Math.hypot(dx, dy)
+      s.dragging = false
+    } else {
+      const t = e.touches[0]
+      s.dragging = true; s.lastX = t.clientX; s.lastY = t.clientY; s.dragDist = 0
+    }
   }
   const onTouchMove = e => {
     e.preventDefault()
-    const s = state.current; const t = e.touches[0]
-    if (!s.dragging) return
-    s.rotY += (t.clientX - s.lastX) * 0.007
-    s.rotX += (t.clientY - s.lastY) * 0.007
-    s.rotX  = Math.max(-1.3, Math.min(1.3, s.rotX))
-    s.lastX = t.clientX; s.lastY = t.clientY
+    const s = state.current
+    if (e.touches.length === 2) {
+      // 2-finger pinch zoom
+      const dx = e.touches[0].clientX - e.touches[1].clientX
+      const dy = e.touches[0].clientY - e.touches[1].clientY
+      const dist = Math.hypot(dx, dy)
+      if (s.pinchDist > 0) {
+        const ratio = dist / s.pinchDist
+        s.zoom = Math.max(0.3, Math.min(3.0, s.zoom * ratio))
+      }
+      s.pinchDist = dist
+    } else if (s.dragging) {
+      const t = e.touches[0]
+      const dx = t.clientX - s.lastX, dy = t.clientY - s.lastY
+      s.rotY += dx * 0.007
+      s.rotX += dy * 0.007
+      s.rotX  = Math.max(-1.3, Math.min(1.3, s.rotX))
+      s.dragDist += Math.hypot(dx, dy)
+      s.lastX = t.clientX; s.lastY = t.clientY
+    }
   }
-  const onTouchEnd = () => { state.current.dragging = false }
+  const onTouchEnd = () => { const s = state.current; s.dragging = false; s.pinchDist = 0 }
 
   // ── 클릭 히트테스트 ─────────────────────────────────────────
   const onClick = e => {
@@ -228,7 +266,7 @@ export default function WordCloud3D({ topics = [], experiences = [], onTopicClic
 
     let best = null, bestDist = 36
     for (const n of nodes) {
-      const { px, py } = project3D(n.x, n.y, n.z, s.rotX, s.rotY, W, H)
+      const { px, py } = project3D(n.x, n.y, n.z, s.rotX, s.rotY, W, H, s.zoom)
       const d = Math.hypot(px - mx, py - my)
       if (d < bestDist) { bestDist = d; best = n }
     }
