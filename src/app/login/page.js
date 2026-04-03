@@ -35,45 +35,72 @@ export default function LoginPage() {
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
+      fontFamily: 'monospace',
     }}>
-      <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+      <form onSubmit={handleSubmit} style={{
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        gap: '32px',
+        width: '320px',
+      }}>
+        <p style={{
+          color: '#FFE500',
+          fontSize: '16px',
+          letterSpacing: '4px',
+          margin: 0,
+        }}>
+          KIN
+        </p>
+
         <input
           type="password"
           value={password}
           onChange={e => setPassword(e.target.value)}
-          placeholder="—"
+          placeholder="비밀번호"
           autoFocus
           style={{
+            width: '100%',
             background: 'transparent',
             border: 'none',
-            borderBottom: `1px solid ${error ? '#ff4444' : '#FFE500'}`,
-            color: '#FFE500',
-            fontSize: '24px',
-            padding: '8px 0',
+            borderBottom: `2px solid ${error ? '#ff4444' : '#FFE500'}`,
+            color: '#fff',
+            fontSize: '20px',
+            padding: '12px 0',
             outline: 'none',
             textAlign: 'center',
-            letterSpacing: '8px',
-            width: '200px',
+            letterSpacing: '6px',
+            boxSizing: 'border-box',
           }}
         />
+
         {error && (
-          <p style={{ color: '#ff4444', textAlign: 'center', fontSize: '12px', margin: 0 }}>
+          <p style={{
+            color: '#ff4444',
+            fontSize: '14px',
+            margin: 0,
+          }}>
             아니야.
           </p>
         )}
+
         <button
           type="submit"
-          disabled={loading}
+          disabled={loading || !password}
           style={{
             background: 'transparent',
-            border: 'none',
+            border: '1px solid #FFE500',
             color: '#FFE500',
-            cursor: 'pointer',
-            fontSize: '12px',
-            opacity: loading ? 0.5 : 1,
+            padding: '12px 40px',
+            cursor: loading || !password ? 'default' : 'pointer',
+            fontSize: '15px',
+            fontFamily: 'monospace',
+            letterSpacing: '2px',
+            opacity: loading || !password ? 0.4 : 1,
+            width: '100%',
           }}
         >
-          {loading ? '...' : '→'}
+          {loading ? '...' : '들어가기'}
         </button>
       </form>
     </div>
