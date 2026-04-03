@@ -82,11 +82,7 @@ export default function ChatPage() {
   function endSession() {
     const newId = Math.random().toString(36).slice(2)
     localStorage.setItem('kin_session', newId)
-    setSessionId(newId)
-    setMessages([{ role: 'assistant', content: '왔어.', mood: 'default' }])
-    setInput('')
-    setPendingImage(null)
-    setMood('default')
+    router.push('/')
   }
 
   function handleImageSelect(e) {
