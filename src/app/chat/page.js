@@ -51,6 +51,15 @@ export default function ChatPage() {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages])
 
+  function endSession() {
+    const newId = Math.random().toString(36).slice(2)
+    localStorage.setItem('kin_session', newId)
+    setSessionId(newId)
+    setMessages([{ role: 'assistant', content: '왔어.', mood: 'default' }])
+    setInput('')
+    setMood('default')
+  }
+
   async function send() {
     if (!input.trim() || loading) return
 
@@ -90,6 +99,7 @@ export default function ChatPage() {
   }
 
   function handleKey(e) {
+    if (e.isComposing || e.keyCode === 229) return
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault()
       send()
@@ -104,13 +114,20 @@ export default function ChatPage() {
       flexDirection: 'column',
       fontFamily: 'monospace',
     }}>
-      {/* 상단 바 */}
+
+      {/* 상단 바 — fixed */}
       <div style={{
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        right: 0,
+        zIndex: 100,
+        background: '#000',
+        borderBottom: '1px solid #222',
         display: 'flex',
         alignItems: 'center',
+        justifyContent: 'space-between',
         padding: '16px 24px',
-        borderBottom: '1px solid #222',
-        gap: '12px',
       }}>
         <button
           onClick={() => router.push('/')}
@@ -126,17 +143,9 @@ export default function ChatPage() {
         >
           ← 대시보드
         </button>
-        <span style={{ color: '#444', fontSize: '14px' }}>|</span>
-        <span style={{ color: '#FFE500', fontSize: '14px', letterSpacing: '2px' }}>KIN</span>
-      </div>
 
-      {/* KIN 이미지 */}
-      <div style={{
-        display: 'flex',
-        justifyContent: 'center',
-        paddingTop: '24px',
-      }}>
-        <div style={{ position: 'relative', width: 120, height: 120 }}>
+        {/* KIN 이미지 — 상단 바 중앙에 고정 */}
+        <div style={{ position: 'relative', width: 56, height: 56 }}>
           <Image
             src={MOOD_IMAGE[mood]}
             alt="KIN"
@@ -145,13 +154,29 @@ export default function ChatPage() {
             priority
           />
         </div>
+
+        <button
+          onClick={endSession}
+          style={{
+            background: 'transparent',
+            border: '1px solid #333',
+            color: '#666',
+            cursor: 'pointer',
+            fontSize: '13px',
+            fontFamily: 'monospace',
+            padding: '6px 14px',
+            letterSpacing: '1px',
+          }}
+        >
+          대화 종료
+        </button>
       </div>
 
-      {/* 메시지 영역 */}
+      {/* 메시지 영역 — 상단 바 + 여백만큼 padding */}
       <div style={{
         flex: 1,
         overflowY: 'auto',
-        padding: '32px 24px 140px',
+        padding: '108px 24px 140px',
         display: 'flex',
         flexDirection: 'column',
         gap: '24px',
@@ -183,7 +208,7 @@ export default function ChatPage() {
         <div ref={bottomRef} />
       </div>
 
-      {/* 입력창 */}
+      {/* 입력창 — fixed */}
       <div style={{
         position: 'fixed',
         bottom: 0,
