@@ -84,10 +84,18 @@ function SmartBtn({ label, onClick, variant='default' }) {
 
 // 모바일 전체화면 모달
 function MobileModal({ open, onClose, children }) {
+  const [mounted, setMounted] = useState(false)
+
   useEffect(() => {
+    if (open) setMounted(true)
     document.body.style.overflow = open ? 'hidden' : ''
-    return () => { document.body.style.overflow = '' }
+    // 닫힌 후 애니메이션(400ms) 완료 후 unmount
+    let t
+    if (!open && mounted) t = setTimeout(() => setMounted(false), 420)
+    return () => { clearTimeout(t); document.body.style.overflow = '' }
   }, [open])
+
+  if (!mounted && !open) return null
 
   return (
     <div style={{
@@ -200,8 +208,8 @@ function QuestionCards({ pending, qStats, setQStats, onAnswer, submitting }) {
             position:'relative', zIndex:1,
             background:'#111110', borderRadius:12, border:`1px solid #252523`,
             padding:'28px 24px',
-            transform: dragging ? `translateX(${dragX}px) rotate(${dragX*0.02}deg)` : 'translateX(0)',
-            transition: dragging ? 'none' : 'transform 0.35s cubic-bezier(0.32,0.72,0,1)',
+            transform: dragging.current ? `translateX(${dragX}px) rotate(${dragX*0.02}deg)` : 'translateX(0)',
+            transition: dragging.current ? 'none' : 'transform 0.35s cubic-bezier(0.32,0.72,0,1)',
             userSelect:'none',
           }}
         >
@@ -222,44 +230,43 @@ function QuestionCards({ pending, qStats, setQStats, onAnswer, submitting }) {
           </p>
 
           {/* 스마트 답변 */}
-          {qType === 'yesno' && (
+          {/* 숏컷 버튼 (해당되는 경우만) */}
+          {(qType === 'yesno' || qType === 'review') && (
+            <div style={{ display:'flex', gap:8, marginBottom:10 }}>
+              {qType === 'yesno' && <>
+                <button onClick={()=>doAnswer('예')} style={{ flex:1, background:YELLOW, border:'none', color:'#000', cursor:'pointer', fontSize:13, fontFamily:FONT, padding:'13px', borderRadius:8, fontWeight:700 }}>예</button>
+                <button onClick={()=>doAnswer('아니오')} style={{ flex:1, background:'#1a1a18', border:`1px solid #2a2a28`, color:'#aaa', cursor:'pointer', fontSize:13, fontFamily:FONT, padding:'13px', borderRadius:8 }}>아니오</button>
+              </>}
+              {qType === 'review' && <>
+                <button onClick={()=>doAnswer('진행하자')} style={{ flex:1, background:YELLOW, border:'none', color:'#000', cursor:'pointer', fontSize:13, fontFamily:FONT, padding:'13px', borderRadius:8, fontWeight:700 }}>진행하자</button>
+                <button onClick={()=>doAnswer('나중에')} style={{ flex:1, background:'#1a1a18', border:`1px solid #2a2a28`, color:'#aaa', cursor:'pointer', fontSize:13, fontFamily:FONT, padding:'13px', borderRadius:8 }}>나중에</button>
+              </>}
+            </div>
+          )}
+          {/* 자유 입력 - 항상 표시 */}
+          <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
+            <textarea value={answers[currentQ.id]||''} onChange={e=>setAnswers(p=>({...p,[currentQ.id]:e.target.value}))}
+              placeholder={qType==='free' ? '답해줘.' : '또는 직접 써줘.'}
+              rows={3}
+              style={{ background:'#080806', border:`1px solid #2a2a28`, borderRadius:8,
+                color:'#d8d8d0', fontSize:15, padding:'14px', resize:'none',
+                fontFamily:FONT, lineHeight:1.6, outline:'none', width:'100%' }}
+            />
             <div style={{ display:'flex', gap:8 }}>
-              <button onClick={()=>doAnswer('예')} style={{ flex:1, background:YELLOW, border:'none', color:'#000', cursor:'pointer', fontSize:13, fontFamily:FONT, padding:'14px', borderRadius:8, fontWeight:700 }}>예</button>
-              <button onClick={()=>doAnswer('아니오')} style={{ flex:1, background:'#1a1a18', border:`1px solid #2a2a28`, color:'#aaa', cursor:'pointer', fontSize:13, fontFamily:FONT, padding:'14px', borderRadius:8 }}>아니오</button>
-              <button onClick={()=>doAnswer(null,true)} style={{ width:52, background:'transparent', border:`1px solid #1c1c1a`, color:'#333', cursor:'pointer', fontSize:11, fontFamily:FONT, padding:'14px 0', borderRadius:8 }}>—</button>
+              <button onClick={()=>doAnswer(answers[currentQ.id])} disabled={!answers[currentQ.id]?.trim()||submitting[currentQ.id]}
+                style={{ flex:1, background:answers[currentQ.id]?.trim()?YELLOW:'#1a1a18',
+                  border:'none', color:answers[currentQ.id]?.trim()?'#000':'#444',
+                  cursor:'pointer', fontSize:13, fontFamily:FONT, padding:'14px', borderRadius:8, fontWeight:700,
+                  opacity:submitting[currentQ.id]?0.5:1 }}>
+                {submitting[currentQ.id]?'...':'전달'}
+              </button>
+              <button onClick={()=>doAnswer(null,true)}
+                style={{ width:80, background:'transparent', border:`1px solid #1c1c1a`, color:'#333',
+                  cursor:'pointer', fontSize:11, fontFamily:FONT, padding:'14px 0', borderRadius:8 }}>
+                스킵
+              </button>
             </div>
-          )}
-          {qType === 'review' && (
-            <div style={{ display:'flex', gap:8 }}>
-              <button onClick={()=>doAnswer('진행하자')} style={{ flex:1, background:YELLOW, border:'none', color:'#000', cursor:'pointer', fontSize:13, fontFamily:FONT, padding:'14px', borderRadius:8, fontWeight:700 }}>진행하자</button>
-              <button onClick={()=>doAnswer('나중에')} style={{ flex:1, background:'#1a1a18', border:`1px solid #2a2a28`, color:'#aaa', cursor:'pointer', fontSize:13, fontFamily:FONT, padding:'14px', borderRadius:8 }}>나중에</button>
-              <button onClick={()=>doAnswer(null,true)} style={{ width:52, background:'transparent', border:`1px solid #1c1c1a`, color:'#333', cursor:'pointer', fontSize:11, fontFamily:FONT, padding:'14px 0', borderRadius:8 }}>—</button>
-            </div>
-          )}
-          {qType === 'free' && (
-            <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
-              <textarea value={answers[currentQ.id]||''} onChange={e=>setAnswers(p=>({...p,[currentQ.id]:e.target.value}))}
-                placeholder="답해줘." rows={3}
-                style={{ background:'#080806', border:`1px solid #2a2a28`, borderRadius:8,
-                  color:'#d8d8d0', fontSize:15, padding:'14px', resize:'none',
-                  fontFamily:FONT, lineHeight:1.6, outline:'none', width:'100%' }}
-              />
-              <div style={{ display:'flex', gap:8 }}>
-                <button onClick={()=>doAnswer(answers[currentQ.id])} disabled={!answers[currentQ.id]?.trim()||submitting[currentQ.id]}
-                  style={{ flex:1, background:answers[currentQ.id]?.trim()?YELLOW:'#1a1a18',
-                    border:'none', color:answers[currentQ.id]?.trim()?'#000':'#444',
-                    cursor:'pointer', fontSize:13, fontFamily:FONT, padding:'14px', borderRadius:8, fontWeight:700,
-                    opacity:submitting[currentQ.id]?0.5:1 }}>
-                  {submitting[currentQ.id]?'...':'전달'}
-                </button>
-                <button onClick={()=>doAnswer(null,true)}
-                  style={{ width:80, background:'transparent', border:`1px solid #1c1c1a`, color:'#333',
-                    cursor:'pointer', fontSize:11, fontFamily:FONT, padding:'14px 0', borderRadius:8 }}>
-                  스킵
-                </button>
-              </div>
-            </div>
-          )}
+          </div>
         </div>
       </div>
 
@@ -311,7 +318,6 @@ export default function DashboardPage() {
         body: JSON.stringify(skip ? {skip:true} : {answer}),
       })
       setQStats(p => skip ? {...p, skipped:p.skipped+1} : {...p, answered:p.answered+1})
-      setQIndex(i => Math.max(0, i))
       load()
     } finally { setSubmitting(p=>({...p,[id]:false})) }
   }
@@ -363,42 +369,39 @@ export default function DashboardPage() {
               <div style={{ flex:1, borderLeft:`2px solid ${YELLOW}`, paddingLeft:16, marginBottom:20 }}>
                 <p style={{ fontSize:14, color:'#d8d8d0', lineHeight:1.9, margin:0, fontFamily:FONT }}>{currentQ.request_to_ben}</p>
               </div>
-              <div style={{ marginBottom:14 }}>
-                {qType === 'yesno' && (
+              <div style={{ display:'flex', flexDirection:'column', gap:8, marginBottom:14 }}>
+                {/* 숏컷 버튼 - 해당 유형일 때만 */}
+                {(qType === 'yesno' || qType === 'review') && (
                   <div style={{ display:'flex', gap:6, flexWrap:'wrap' }}>
-                    <SmartBtn label="예" onClick={()=>doAnswer(currentQ.id,'예')} variant="primary" />
-                    <SmartBtn label="아니오" onClick={()=>doAnswer(currentQ.id,'아니오')} />
-                    <SmartBtn label="답 안 하겠음" onClick={()=>doAnswer(currentQ.id,null,true)} variant="muted" />
+                    {qType === 'yesno' && <>
+                      <SmartBtn label="예" onClick={()=>doAnswer(currentQ.id,'예')} variant="primary" />
+                      <SmartBtn label="아니오" onClick={()=>doAnswer(currentQ.id,'아니오')} />
+                    </>}
+                    {qType === 'review' && <>
+                      <SmartBtn label="진행하자" onClick={()=>doAnswer(currentQ.id,'진행하자')} variant="primary" />
+                      <SmartBtn label="나중에" onClick={()=>doAnswer(currentQ.id,'나중에')} />
+                    </>}
                   </div>
                 )}
-                {qType === 'review' && (
-                  <div style={{ display:'flex', gap:6, flexWrap:'wrap' }}>
-                    <SmartBtn label="진행하자" onClick={()=>doAnswer(currentQ.id,'진행하자')} variant="primary" />
-                    <SmartBtn label="나중에" onClick={()=>doAnswer(currentQ.id,'나중에')} />
-                    <SmartBtn label="답 안 하겠음" onClick={()=>doAnswer(currentQ.id,null,true)} variant="muted" />
-                  </div>
-                )}
-                {qType === 'free' && (
-                  <div style={{ display:'flex', flexDirection:'column', gap:8 }}>
-                    <div style={{ display:'flex', gap:6 }}>
-                      <textarea value={answers[currentQ.id]||''} onChange={e=>setAnswers(p=>({...p,[currentQ.id]:e.target.value}))}
-                        placeholder="답해줘." rows={2}
-                        style={{ flex:1, background:'#080806', border:`1px solid #252523`, color:'#d8d8d0',
-                          fontSize:13, padding:'10px 12px', resize:'none', fontFamily:FONT, lineHeight:1.6, outline:'none' }}/>
-                      <button onClick={()=>doAnswer(currentQ.id,answers[currentQ.id])}
-                        disabled={submitting[currentQ.id]||!answers[currentQ.id]?.trim()}
-                        style={{ background:answers[currentQ.id]?.trim()?YELLOW:'transparent', border:`1px solid ${YELLOW}`,
-                          color:answers[currentQ.id]?.trim()?'#000':YELLOW, cursor:'pointer', fontSize:11,
-                          fontFamily:FONT, padding:'0 14px', transition:'all 0.15s', opacity:submitting[currentQ.id]?0.4:1 }}>
-                        {submitting[currentQ.id]?'...':'전달'}
-                      </button>
-                    </div>
-                    <button onClick={()=>doAnswer(currentQ.id,null,true)}
-                      style={{ background:'transparent', border:'none', color:'#333', cursor:'pointer', fontSize:10, fontFamily:FONT, textAlign:'left', letterSpacing:'0.1em' }}>
-                      답 안 하겠음 →
-                    </button>
-                  </div>
-                )}
+                {/* 자유 입력 - 항상 표시 */}
+                <div style={{ display:'flex', gap:6 }}>
+                  <textarea value={answers[currentQ.id]||''} onChange={e=>setAnswers(p=>({...p,[currentQ.id]:e.target.value}))}
+                    placeholder={qType==='free' ? '답해줘.' : '또는 직접 써줘.'}
+                    rows={2}
+                    style={{ flex:1, background:'#080806', border:`1px solid #252523`, color:'#d8d8d0',
+                      fontSize:13, padding:'10px 12px', resize:'none', fontFamily:FONT, lineHeight:1.6, outline:'none' }}/>
+                  <button onClick={()=>doAnswer(currentQ.id,answers[currentQ.id])}
+                    disabled={submitting[currentQ.id]||!answers[currentQ.id]?.trim()}
+                    style={{ background:answers[currentQ.id]?.trim()?YELLOW:'transparent', border:`1px solid ${YELLOW}`,
+                      color:answers[currentQ.id]?.trim()?'#000':YELLOW, cursor:'pointer', fontSize:11,
+                      fontFamily:FONT, padding:'0 14px', transition:'all 0.15s', opacity:submitting[currentQ.id]?0.4:1 }}>
+                    {submitting[currentQ.id]?'...':'전달'}
+                  </button>
+                </div>
+                <button onClick={()=>doAnswer(currentQ.id,null,true)}
+                  style={{ background:'transparent', border:'none', color:'#333', cursor:'pointer', fontSize:10, fontFamily:FONT, textAlign:'left', letterSpacing:'0.1em' }}>
+                  답 안 하겠음 →
+                </button>
               </div>
               {pending.length > 1 && (
                 <div style={{ display:'flex', alignItems:'center', gap:8, borderTop:`1px solid ${BORDER}`, paddingTop:12 }}>
@@ -435,7 +438,7 @@ export default function DashboardPage() {
         </div>
       ) : (
         <div style={{ flex:1 }}>
-          <WordCloud topics={topics} onTopicClick={t=>setSelectedTopic(selectedTopic?.word===t.word?null:t)} />
+          <WordCloud topics={topics} experiences={data?.recentExperiences||[]} onTopicClick={t=>setSelectedTopic(selectedTopic?.word===t.word?null:t)} />
         </div>
       )}
       {selectedTopic && (
