@@ -190,7 +190,7 @@ export default function ChatPage() {
 
       {/* Google Fonts + animations */}
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Mono:wght@300;400&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400&display=swap');
 
         @keyframes dotPulse {
           0%, 100% { opacity: 0.25; transform: scale(0.75); }
@@ -205,6 +205,7 @@ export default function ChatPage() {
         }
         .send-btn:hover { color: #FFE500 !important; }
         .attach-btn:hover { color: #FFE500 !important; }
+        .back-btn:hover { color: #FFE500 !important; }
         .end-btn:hover { border-color: #444 !important; color: #888 !important; }
         ::-webkit-scrollbar { width: 3px; }
         ::-webkit-scrollbar-track { background: transparent; }
@@ -231,7 +232,7 @@ export default function ChatPage() {
         <button
           onClick={() => router.push('/')}
           style={{
-            background: 'transparent', border: 'none', color: '#3a3a38',
+            background: 'transparent', border: 'none', color: '#777',
             cursor: 'pointer', fontSize: '18px', fontFamily: "'DM Mono', monospace",
             minWidth: 44, minHeight: 44, display: 'flex', alignItems: 'center',
           }}
@@ -239,7 +240,7 @@ export default function ChatPage() {
 
         {/* KIN identity */}
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
-          <div style={{ position: 'relative', width: 48, height: 48 }}>
+          <div style={{ position: 'relative', width: 68, height: 68 }}>
             <Image
               src={MOOD_IMAGE[mood] || MOOD_IMAGE.default}
               alt="KIN" fill
@@ -248,9 +249,9 @@ export default function ChatPage() {
             />
           </div>
           <span style={{
-            fontFamily: "'Syne', sans-serif",
-            fontSize: '8px', letterSpacing: '0.32em',
-            color: '#FFE500', opacity: 0.65, textTransform: 'uppercase',
+            fontFamily: "'DM Mono', monospace",
+            fontSize: '10px', letterSpacing: '0.1em',
+            color: '#FFE500', opacity: 0.8, textTransform: 'uppercase',
           }}>
             {MOOD_KO[mood] || '대기 중'}
           </span>
@@ -262,7 +263,7 @@ export default function ChatPage() {
           onClick={endSession}
           style={{
             background: 'transparent', border: '1px solid #252523',
-            color: '#3a3a38', cursor: 'pointer', fontSize: '11px',
+            color: '#666', cursor: 'pointer', fontSize: '11px',
             fontFamily: "'DM Mono', monospace", padding: '0 12px',
             letterSpacing: '0.08em', minHeight: 44, minWidth: 44,
             display: 'flex', alignItems: 'center', transition: 'all 0.2s',
@@ -289,10 +290,10 @@ export default function ChatPage() {
             }}>
               {/* Label */}
               <span style={{
-                fontFamily: "'Syne', sans-serif",
-                fontSize: '8px', letterSpacing: '0.32em',
+                fontFamily: "'DM Mono', monospace",
+                fontSize: '10px', letterSpacing: '0.12em',
                 textTransform: 'uppercase',
-                color: isKin ? '#FFE500' : '#333',
+                color: isKin ? '#FFE500' : '#555',
               }}>
                 {isKin ? 'KIN' : 'BEN'}
               </span>
@@ -320,7 +321,7 @@ export default function ChatPage() {
                 {/* Text */}
                 {text && (
                   <p style={{
-                    color: isKin ? '#e0e0d8' : '#666',
+                    color: isKin ? '#f0f0e8' : '#888',
                     fontSize: '15px', lineHeight: '1.8',
                     margin: 0, whiteSpace: 'pre-wrap', wordBreak: 'break-word',
                   }}>
@@ -335,7 +336,7 @@ export default function ChatPage() {
         {/* Loading dots */}
         {loading && (
           <div className="msg-bubble" style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 5 }}>
-            <span style={{ fontFamily: "'Syne', sans-serif", fontSize: '8px', letterSpacing: '0.32em', textTransform: 'uppercase', color: '#FFE500' }}>KIN</span>
+            <span style={{ fontFamily: "'DM Mono', monospace", fontSize: '10px', letterSpacing: '0.12em', textTransform: 'uppercase', color: '#FFE500' }}>KIN</span>
             <div style={{ background: '#0d0d0b', borderLeft: '2px solid #FFE500', padding: '14px 16px', display: 'flex', gap: 6, alignItems: 'center' }}>
               {[0, 1, 2].map(i => (
                 <div key={i} style={{
@@ -408,7 +409,7 @@ export default function ChatPage() {
           onClick={() => fileInputRef.current?.click()}
           style={{
             background: 'transparent', border: 'none',
-            color: pendingImage ? '#FFE500' : '#333',
+            color: pendingImage ? '#FFE500' : '#555',
             cursor: 'pointer', fontSize: '20px',
             minWidth: 44, minHeight: 44,
             display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -443,7 +444,7 @@ export default function ChatPage() {
           disabled={!canSend}
           style={{
             background: 'transparent', border: 'none',
-            color: canSend ? '#888' : '#252523',
+            color: canSend ? '#aaa' : '#333',
             cursor: canSend ? 'pointer' : 'default',
             fontSize: '22px',
             minWidth: 44, minHeight: 44,
