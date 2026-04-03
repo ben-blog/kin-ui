@@ -34,8 +34,6 @@ const MOOD_KO = {
   calm:       '차분함',
 }
 
-const MAX_IMAGE_SIZE = 4 * 1024 * 1024 // 4MB
-
 function extractDisplayText(content) {
   if (typeof content === 'string') return content
   if (Array.isArray(content)) {
@@ -88,18 +86,29 @@ export default function ChatPage() {
   function handleImageSelect(e) {
     const file = e.target.files[0]
     if (!file) return
-    if (file.size > MAX_IMAGE_SIZE) {
-      alert('이미지는 4MB 이하만 가능해.')
-      e.target.value = ''
-      return
-    }
+
     const reader = new FileReader()
     reader.onload = (ev) => {
-      setPendingImage({
-        dataUrl:   ev.target.result,
-        mediaType: file.type || 'image/jpeg',
-        name:      file.name,
-      })
+      const img = new window.Image()
+      img.onload = () => {
+        // canvas로 리사이즈 + 압축 (최대 1200px, quality 0.82)
+        const MAX_PX = 1200
+        let w = img.width, h = img.height
+        if (w > MAX_PX || h > MAX_PX) {
+          if (w > h) { h = Math.round(h * MAX_PX / w); w = MAX_PX }
+          else        { w = Math.round(w * MAX_PX / h); h = MAX_PX }
+        }
+        const canvas = document.createElement('canvas')
+        canvas.width = w; canvas.height = h
+        canvas.getContext('2d').drawImage(img, 0, 0, w, h)
+        const dataUrl = canvas.toDataURL('image/jpeg', 0.82)
+        setPendingImage({
+          dataUrl,
+          mediaType: 'image/jpeg',
+          name: file.name,
+        })
+      }
+      img.src = ev.target.result
     }
     reader.readAsDataURL(file)
     e.target.value = ''
