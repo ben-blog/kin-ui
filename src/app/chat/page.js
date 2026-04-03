@@ -7,17 +7,41 @@ import Image from 'next/image'
 const KIN_API = process.env.NEXT_PUBLIC_KIN_API_URL || 'https://kin-agent-production.up.railway.app'
 
 const MOOD_IMAGE = {
-  default:   '/kin_default.webp',
-  happy:     '/kin_happy.webp',
-  excited:   '/kin_excited.webp',
-  thinking:  '/kin_thinking1.webp',
-  serious:   '/kin_serious.webp',
-  sad:       '/kin_sad.webp',
-  laughing:  '/kin_laughing2.webp',
-  shocked:   '/kin_shocked1.webp',
-  energetic: '/kin_energetic1.webp',
-  interested:'/kin_interested1.webp',
-  calm:      '/kin_calm.webp',
+  default:    '/kin_default.webp',
+  happy:      '/kin_happy.webp',
+  excited:    '/kin_excited.webp',
+  thinking:   '/kin_thinking1.webp',
+  serious:    '/kin_serious.webp',
+  sad:        '/kin_sad.webp',
+  laughing:   '/kin_laughing2.webp',
+  shocked:    '/kin_shocked1.webp',
+  energetic:  '/kin_energetic1.webp',
+  interested: '/kin_interested1.webp',
+  calm:       '/kin_calm.webp',
+}
+
+const MOOD_KO = {
+  default:    '대기 중',
+  happy:      '기분 좋음',
+  excited:    '흥미로움',
+  thinking:   '생각 중',
+  serious:    '진지함',
+  sad:        '슬픔',
+  laughing:   '웃음',
+  shocked:    '놀람',
+  energetic:  '에너지',
+  interested: '관심 있음',
+  calm:       '차분함',
+}
+
+const MAX_IMAGE_SIZE = 4 * 1024 * 1024 // 4MB
+
+function extractDisplayText(content) {
+  if (typeof content === 'string') return content
+  if (Array.isArray(content)) {
+    return content.filter(b => b.type === 'text').map(b => b.text).join(' ')
+  }
+  return ''
 }
 
 export default function ChatPage() {
@@ -27,8 +51,12 @@ export default function ChatPage() {
   const [loading, setLoading] = useState(false)
   const [mood, setMood] = useState('default')
   const [sessionId, setSessionId] = useState(null)
-  const bottomRef = useRef(null)
-  const inputRef  = useRef(null)
+  const [pendingImage, setPendingImage] = useState(null)
+
+  const bottomRef   = useRef(null)
+  const inputRef    = useRef(null)
+  const fileInputRef = useRef(null)
+  const textareaRef = useRef(null)
 
   useEffect(() => {
     const stored = localStorage.getItem('kin_session')
@@ -49,7 +77,7 @@ export default function ChatPage() {
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
-  }, [messages])
+  }, [messages, loading])
 
   function endSession() {
     const newId = Math.random().toString(36).slice(2)
@@ -57,16 +85,63 @@ export default function ChatPage() {
     setSessionId(newId)
     setMessages([{ role: 'assistant', content: '왔어.', mood: 'default' }])
     setInput('')
+    setPendingImage(null)
     setMood('default')
   }
 
-  async function send() {
-    if (!input.trim() || loading) return
+  function handleImageSelect(e) {
+    const file = e.target.files[0]
+    if (!file) return
+    if (file.size > MAX_IMAGE_SIZE) {
+      alert('이미지는 4MB 이하만 가능해.')
+      e.target.value = ''
+      return
+    }
+    const reader = new FileReader()
+    reader.onload = (ev) => {
+      setPendingImage({
+        dataUrl:   ev.target.result,
+        mediaType: file.type || 'image/jpeg',
+        name:      file.name,
+      })
+    }
+    reader.readAsDataURL(file)
+    e.target.value = ''
+  }
 
-    const userMessage = { role: 'user', content: input.trim() }
-    const newMessages = [...messages, userMessage]
+  function autoResize() {
+    const el = textareaRef.current
+    if (!el) return
+    el.style.height = 'auto'
+    el.style.height = Math.min(el.scrollHeight, 120) + 'px'
+  }
+
+  async function send() {
+    if ((!input.trim() && !pendingImage) || loading) return
+
+    let apiContent
+    if (pendingImage) {
+      const base64 = pendingImage.dataUrl.split(',')[1]
+      apiContent = [
+        { type: 'image', source: { type: 'base64', media_type: pendingImage.mediaType, data: base64 } },
+        { type: 'text', text: input.trim() || '이 이미지 봐줘.' },
+      ]
+    } else {
+      apiContent = input.trim()
+    }
+
+    const userMsg = {
+      role:         'user',
+      content:      apiContent,
+      displayImage: pendingImage?.dataUrl || null,
+      displayText:  input.trim(),
+    }
+
+    const newMessages = [...messages, userMsg]
     setMessages(newMessages)
     setInput('')
+    setPendingImage(null)
+    if (textareaRef.current) textareaRef.current.style.height = 'auto'
     setLoading(true)
     setMood('thinking')
 
@@ -75,26 +150,21 @@ export default function ChatPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          userId: 'ben',
+          userId:    'ben',
           sessionId,
-          messages: newMessages.map(m => ({ role: m.role, content: m.content })),
+          messages:  newMessages.map(m => ({ role: m.role, content: m.content })),
         }),
       })
-
       const data = await res.json()
       const newMood = data.mood || 'default'
       setMood(newMood)
-      setMessages(prev => [...prev, {
-        role: 'assistant',
-        content: data.reply,
-        mood: newMood,
-      }])
-    } catch (err) {
+      setMessages(prev => [...prev, { role: 'assistant', content: data.reply, mood: newMood }])
+    } catch {
       setMood('default')
-      setMessages(prev => [...prev, { role: 'assistant', content: '...', mood: 'default' }])
+      setMessages(prev => [...prev, { role: 'assistant', content: '연결에 문제가 생겼어.', mood: 'default' }])
     } finally {
       setLoading(false)
-      inputRef.current?.focus()
+      setTimeout(() => inputRef.current?.focus(), 100)
     }
   }
 
@@ -106,162 +176,281 @@ export default function ChatPage() {
     }
   }
 
+  const canSend = !!(input.trim() || pendingImage) && !loading
+
   return (
     <div style={{
-      background: '#000',
-      minHeight: '100vh',
+      background: '#080806',
+      height: '100dvh',
       display: 'flex',
       flexDirection: 'column',
-      fontFamily: 'monospace',
+      fontFamily: "'DM Mono', monospace",
+      overflow: 'hidden',
     }}>
 
-      {/* 상단 바 — fixed */}
+      {/* Google Fonts + animations */}
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Mono:wght@300;400&display=swap');
+
+        @keyframes dotPulse {
+          0%, 100% { opacity: 0.25; transform: scale(0.75); }
+          50%       { opacity: 1;    transform: scale(1.1);  }
+        }
+        @keyframes msgIn {
+          from { opacity: 0; transform: translateY(6px); }
+          to   { opacity: 1; transform: translateY(0);   }
+        }
+        .msg-bubble {
+          animation: msgIn 0.22s ease forwards;
+        }
+        .send-btn:hover { color: #FFE500 !important; }
+        .attach-btn:hover { color: #FFE500 !important; }
+        .end-btn:hover { border-color: #444 !important; color: #888 !important; }
+        ::-webkit-scrollbar { width: 3px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #2a2a28; border-radius: 2px; }
+      `}</style>
+
+      {/* Grain */}
       <div style={{
-        position: 'fixed',
-        top: 0,
-        left: 0,
-        right: 0,
-        zIndex: 100,
-        background: '#000',
-        borderBottom: '1px solid #222',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        padding: '16px 24px',
+        position: 'fixed', inset: 0, zIndex: 0, pointerEvents: 'none', opacity: 0.022,
+        backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='f'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23f)'/%3E%3C/svg%3E")`,
+        backgroundSize: '200px',
+      }} />
+
+      {/* ── HEADER ── */}
+      <div style={{
+        position: 'relative', zIndex: 10,
+        background: 'rgba(8,8,6,0.96)',
+        borderBottom: '1px solid #1a1a18',
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        padding: '10px 16px',
+        flexShrink: 0,
       }}>
+        {/* Back */}
         <button
           onClick={() => router.push('/')}
           style={{
-            background: 'transparent',
-            border: 'none',
-            color: '#888',
-            cursor: 'pointer',
-            fontSize: '14px',
-            fontFamily: 'monospace',
-            padding: 0,
+            background: 'transparent', border: 'none', color: '#3a3a38',
+            cursor: 'pointer', fontSize: '18px', fontFamily: "'DM Mono', monospace",
+            minWidth: 44, minHeight: 44, display: 'flex', alignItems: 'center',
           }}
-        >
-          ← 대시보드
-        </button>
+        >←</button>
 
-        {/* KIN 이미지 — 상단 바 중앙에 고정 */}
-        <div style={{ position: 'relative', width: 56, height: 56 }}>
-          <Image
-            src={MOOD_IMAGE[mood]}
-            alt="KIN"
-            fill
-            style={{ objectFit: 'contain', transition: 'all 0.3s ease' }}
-            priority
-          />
+        {/* KIN identity */}
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
+          <div style={{ position: 'relative', width: 48, height: 48 }}>
+            <Image
+              src={MOOD_IMAGE[mood] || MOOD_IMAGE.default}
+              alt="KIN" fill
+              style={{ objectFit: 'contain', transition: 'all 0.35s ease' }}
+              priority
+            />
+          </div>
+          <span style={{
+            fontFamily: "'Syne', sans-serif",
+            fontSize: '8px', letterSpacing: '0.32em',
+            color: '#FFE500', opacity: 0.65, textTransform: 'uppercase',
+          }}>
+            {MOOD_KO[mood] || '대기 중'}
+          </span>
         </div>
 
+        {/* End */}
         <button
+          className="end-btn"
           onClick={endSession}
           style={{
-            background: 'transparent',
-            border: '1px solid #333',
-            color: '#666',
-            cursor: 'pointer',
-            fontSize: '13px',
-            fontFamily: 'monospace',
-            padding: '6px 14px',
-            letterSpacing: '1px',
+            background: 'transparent', border: '1px solid #252523',
+            color: '#3a3a38', cursor: 'pointer', fontSize: '11px',
+            fontFamily: "'DM Mono', monospace", padding: '0 12px',
+            letterSpacing: '0.08em', minHeight: 44, minWidth: 44,
+            display: 'flex', alignItems: 'center', transition: 'all 0.2s',
           }}
-        >
-          대화 종료
-        </button>
+        >종료</button>
       </div>
 
-      {/* 메시지 영역 — 상단 바 + 여백만큼 padding */}
+      {/* ── MESSAGES ── */}
       <div style={{
-        flex: 1,
-        overflowY: 'auto',
-        padding: '108px 24px 140px',
-        display: 'flex',
-        flexDirection: 'column',
-        gap: '24px',
-        maxWidth: '640px',
-        width: '100%',
-        margin: '0 auto',
+        flex: 1, overflowY: 'auto',
+        padding: '20px 16px 12px',
+        display: 'flex', flexDirection: 'column', gap: '18px',
+        position: 'relative', zIndex: 1,
+        WebkitOverflowScrolling: 'touch',
       }}>
-        {messages.map((msg, i) => (
-          <div key={i} style={{
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: msg.role === 'user' ? 'flex-end' : 'flex-start',
-          }}>
-            <p style={{
-              color: msg.role === 'user' ? '#aaa' : '#fff',
-              fontSize: '16px',
-              lineHeight: '1.8',
-              margin: 0,
-              maxWidth: '85%',
-              whiteSpace: 'pre-wrap',
+        {messages.map((msg, i) => {
+          const isKin = msg.role === 'assistant'
+          const text  = msg.displayText ?? extractDisplayText(msg.content)
+          return (
+            <div key={i} className="msg-bubble" style={{
+              display: 'flex', flexDirection: 'column',
+              alignItems: isKin ? 'flex-start' : 'flex-end',
+              gap: 5,
             }}>
-              {msg.content}
-            </p>
-          </div>
-        ))}
+              {/* Label */}
+              <span style={{
+                fontFamily: "'Syne', sans-serif",
+                fontSize: '8px', letterSpacing: '0.32em',
+                textTransform: 'uppercase',
+                color: isKin ? '#FFE500' : '#333',
+              }}>
+                {isKin ? 'KIN' : 'BEN'}
+              </span>
+
+              {/* Bubble */}
+              <div style={{
+                maxWidth: '84%',
+                background: isKin ? '#0d0d0b' : '#131311',
+                borderLeft:  isKin ? '2px solid #FFE500' : 'none',
+                borderRight: !isKin ? '2px solid #252523' : 'none',
+                padding: '12px 14px',
+                display: 'flex', flexDirection: 'column', gap: 8,
+              }}>
+                {/* Image */}
+                {msg.displayImage && (
+                  <img
+                    src={msg.displayImage} alt="첨부"
+                    style={{
+                      maxWidth: '100%', maxHeight: 220,
+                      objectFit: 'contain', display: 'block',
+                      border: '1px solid #1f1f1d',
+                    }}
+                  />
+                )}
+                {/* Text */}
+                {text && (
+                  <p style={{
+                    color: isKin ? '#e0e0d8' : '#666',
+                    fontSize: '15px', lineHeight: '1.8',
+                    margin: 0, whiteSpace: 'pre-wrap', wordBreak: 'break-word',
+                  }}>
+                    {text}
+                  </p>
+                )}
+              </div>
+            </div>
+          )
+        })}
+
+        {/* Loading dots */}
         {loading && (
-          <p style={{ color: '#FFE500', opacity: 0.5, fontSize: '16px', margin: 0 }}>...</p>
+          <div className="msg-bubble" style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 5 }}>
+            <span style={{ fontFamily: "'Syne', sans-serif", fontSize: '8px', letterSpacing: '0.32em', textTransform: 'uppercase', color: '#FFE500' }}>KIN</span>
+            <div style={{ background: '#0d0d0b', borderLeft: '2px solid #FFE500', padding: '14px 16px', display: 'flex', gap: 6, alignItems: 'center' }}>
+              {[0, 1, 2].map(i => (
+                <div key={i} style={{
+                  width: 5, height: 5, borderRadius: '50%', background: '#FFE500',
+                  animation: `dotPulse 1.1s ease infinite`,
+                  animationDelay: `${i * 0.18}s`,
+                }} />
+              ))}
+            </div>
+          </div>
         )}
-        <div ref={bottomRef} />
+
+        <div ref={bottomRef} style={{ height: 1 }} />
       </div>
 
-      {/* 입력창 — fixed */}
-      <div style={{
-        position: 'fixed',
-        bottom: 0,
-        left: 0,
-        right: 0,
-        padding: '20px 24px',
-        background: '#000',
-        borderTop: '1px solid #222',
-      }}>
+      {/* ── IMAGE PREVIEW ── */}
+      {pendingImage && (
         <div style={{
-          maxWidth: '640px',
-          margin: '0 auto',
-          display: 'flex',
-          gap: '12px',
-          alignItems: 'flex-end',
+          position: 'relative', zIndex: 10,
+          borderTop: '1px solid #1a1a18',
+          background: '#0a0a08',
+          padding: '10px 16px',
+          display: 'flex', alignItems: 'center', gap: 10,
+          flexShrink: 0,
         }}>
-          <textarea
-            ref={inputRef}
-            value={input}
-            onChange={e => setInput(e.target.value)}
-            onKeyDown={handleKey}
-            placeholder="말해."
-            rows={1}
-            style={{
-              flex: 1,
-              background: 'transparent',
-              border: 'none',
-              borderBottom: '1px solid #333',
-              color: '#fff',
-              fontSize: '16px',
-              padding: '8px 0',
-              outline: 'none',
-              resize: 'none',
-              fontFamily: 'monospace',
-              lineHeight: '1.7',
-            }}
+          <img
+            src={pendingImage.dataUrl} alt="preview"
+            style={{ width: 48, height: 48, objectFit: 'cover', border: '1px solid #252523', flexShrink: 0 }}
           />
+          <span style={{
+            flex: 1, fontSize: '10px', color: '#444',
+            overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+          }}>
+            {pendingImage.name}
+          </span>
           <button
-            onClick={send}
-            disabled={loading || !input.trim()}
+            onClick={() => setPendingImage(null)}
             style={{
-              background: 'transparent',
-              border: 'none',
-              color: '#FFE500',
-              cursor: loading ? 'default' : 'pointer',
-              fontSize: '20px',
-              opacity: loading || !input.trim() ? 0.3 : 1,
-              padding: '0 0 8px',
+              background: 'transparent', border: 'none', color: '#444',
+              cursor: 'pointer', fontSize: '18px',
+              minWidth: 44, minHeight: 44,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
             }}
-          >
-            →
-          </button>
+          >×</button>
         </div>
+      )}
+
+      {/* ── INPUT ── */}
+      <div style={{
+        position: 'relative', zIndex: 10,
+        borderTop: '1px solid #1a1a18',
+        background: 'rgba(8,8,6,0.98)',
+        padding: '10px 16px',
+        paddingBottom: 'max(10px, env(safe-area-inset-bottom))',
+        display: 'flex', alignItems: 'flex-end', gap: 8,
+        flexShrink: 0,
+      }}>
+        {/* Hidden file input */}
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/*"
+          style={{ display: 'none' }}
+          onChange={handleImageSelect}
+        />
+
+        {/* Attach button */}
+        <button
+          className="attach-btn"
+          onClick={() => fileInputRef.current?.click()}
+          style={{
+            background: 'transparent', border: 'none',
+            color: pendingImage ? '#FFE500' : '#333',
+            cursor: 'pointer', fontSize: '20px',
+            minWidth: 44, minHeight: 44,
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            flexShrink: 0, transition: 'color 0.2s',
+          }}
+          title="이미지 첨부"
+        >⊕</button>
+
+        {/* Textarea */}
+        <textarea
+          ref={el => { inputRef.current = el; textareaRef.current = el }}
+          value={input}
+          onChange={e => { setInput(e.target.value); autoResize() }}
+          onKeyDown={handleKey}
+          placeholder="말해."
+          rows={1}
+          style={{
+            flex: 1,
+            background: 'transparent', border: 'none',
+            borderBottom: '1px solid #252523',
+            color: '#e0e0d8', fontSize: '16px',
+            padding: '8px 0', outline: 'none',
+            resize: 'none', fontFamily: "'DM Mono', monospace",
+            lineHeight: '1.6', minHeight: 36, maxHeight: 120,
+          }}
+        />
+
+        {/* Send button */}
+        <button
+          className="send-btn"
+          onClick={send}
+          disabled={!canSend}
+          style={{
+            background: 'transparent', border: 'none',
+            color: canSend ? '#888' : '#252523',
+            cursor: canSend ? 'pointer' : 'default',
+            fontSize: '22px',
+            minWidth: 44, minHeight: 44,
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            flexShrink: 0, transition: 'color 0.2s',
+          }}
+        >→</button>
       </div>
     </div>
   )
