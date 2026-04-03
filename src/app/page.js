@@ -1,5 +1,5 @@
 'use client'
-// src/app/page.js — 대시보드 v3
+// src/app/page.js — 대시보드 v5
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import Image from 'next/image'
@@ -15,7 +15,11 @@ const MOOD_IMAGE = {
   interested:'/kin_interested1.webp', calm:'/kin_calm.webp',
 }
 
-// 질문 유형 감지
+const FONT = "'DM Mono', monospace"
+const YELLOW = '#FFE500'
+const BG = '#080806'
+const BORDER = '#1c1c1a'
+
 function detectQuestionType(text) {
   if (!text) return 'free'
   if (/해도 되는지|알려도 되는지|좋을지|여부|괜찮|맞는지/.test(text)) return 'yesno'
@@ -23,82 +27,273 @@ function detectQuestionType(text) {
   return 'free'
 }
 
-function SectionHeader({ num, title }) {
+function Label({ children, color='#3a3a38', style={} }) {
+  return <span style={{ fontSize:9, letterSpacing:'0.28em', textTransform:'uppercase', color, fontFamily:FONT, ...style }}>{children}</span>
+}
+
+function SectionTitle({ num, title, action }) {
   return (
-    <div style={{ marginBottom: 20 }}>
-      <div style={{ height: 1, background: '#1f1f1d', marginBottom: 12 }} />
-      <div style={{ display: 'flex', alignItems: 'baseline', gap: 10 }}>
-        <span style={{ fontSize: 10, color: '#444', fontFamily:"'DM Mono',monospace", letterSpacing:'0.1em' }}>{String(num).padStart(2,'0')}</span>
-        <span style={{ fontSize: 17, color: '#FFE500', fontFamily:"'DM Mono',monospace", letterSpacing:'0.06em' }}>{title}</span>
+    <div style={{ display:'flex', alignItems:'flex-end', justifyContent:'space-between', marginBottom:24, paddingBottom:12, borderBottom:`1px solid ${BORDER}` }}>
+      <div style={{ display:'flex', alignItems:'baseline', gap:10 }}>
+        <span style={{ fontSize:9, color:'#2e2e2c', fontFamily:FONT, letterSpacing:'0.15em' }}>{String(num).padStart(2,'0')}</span>
+        <span style={{ fontSize:15, color:YELLOW, fontFamily:FONT, letterSpacing:'0.05em' }}>{title}</span>
       </div>
+      {action}
     </div>
   )
 }
 
-function StatBox({ label, value, accent, size=32 }) {
+function Num({ value, label, color=YELLOW, size=36 }) {
   return (
-    <div style={{ display:'flex', flexDirection:'column', gap:5 }}>
-      <span style={{ fontSize:size, fontWeight:700, color:accent||'#fff', fontFamily:"'DM Mono',monospace", lineHeight:1 }}>{value}</span>
-      <span style={{ fontSize:10, color:'#555', letterSpacing:'0.18em', textTransform:'uppercase', fontFamily:"'DM Mono',monospace" }}>{label}</span>
+    <div style={{ display:'flex', flexDirection:'column', gap:8 }}>
+      <span style={{ fontSize:size, fontWeight:700, color, fontFamily:FONT, lineHeight:1 }}>{value}</span>
+      <Label color="#3a3a38">{label}</Label>
     </div>
   )
 }
 
-function BarRow({ label, value, max, color }) {
+function Bar({ label, value, max, color=YELLOW }) {
   const pct = max > 0 ? Math.round((value/max)*100) : 0
   return (
-    <div style={{ display:'flex', alignItems:'center', gap:10, marginBottom:10 }}>
-      <span style={{ width:90, fontSize:11, color:'#777', fontFamily:"'DM Mono',monospace", flexShrink:0 }}>{label}</span>
-      <div style={{ flex:1, height:2, background:'#1a1a18' }}>
-        <div style={{ width:`${pct}%`, height:'100%', background:color||'#FFE500', transition:'width 0.8s ease' }}/>
+    <div style={{ display:'flex', alignItems:'center', gap:12, marginBottom:10 }}>
+      <span style={{ width:88, fontSize:11, color:'#555', fontFamily:FONT, flexShrink:0, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{label}</span>
+      <div style={{ flex:1, height:1, background:'#181816' }}>
+        <div style={{ height:'100%', width:`${pct}%`, background:color, transition:'width 1s ease' }}/>
       </div>
-      <span style={{ width:22, fontSize:11, color:'#555', fontFamily:"'DM Mono',monospace", textAlign:'right' }}>{value}</span>
+      <span style={{ width:20, fontSize:10, color:'#444', fontFamily:FONT, textAlign:'right' }}>{value}</span>
     </div>
   )
 }
 
-// 호버 가능한 섹션 래퍼
-function HoverSection({ children, style }) {
-  const [hovered, setHovered] = useState(false)
-  const [active, setActive] = useState(false)
+function SmartBtn({ label, onClick, variant='default' }) {
+  const [hov, setHov] = useState(false)
+  const styles = {
+    primary: { bg: hov?YELLOW:'rgba(255,229,0,0.08)', border:`1px solid ${YELLOW}`, color: hov?'#000':YELLOW },
+    default: { bg: hov?'rgba(255,255,255,0.05)':'transparent', border:'1px solid #2a2a28', color: hov?'#aaa':'#666' },
+    muted:   { bg: 'transparent', border:'1px solid #1c1c1a', color: hov?'#666':'#333' },
+  }
+  const s = styles[variant]
   return (
-    <div
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => { setHovered(false); setActive(false) }}
-      onMouseDown={() => setActive(true)}
-      onMouseUp={() => setActive(false)}
-      style={{
-        ...style,
-        transition: 'all 0.25s ease',
-        transform: hovered ? 'scale(1.003)' : 'scale(1)',
-        background: active ? 'rgba(255,229,0,0.04)' : hovered ? 'rgba(255,255,255,0.015)' : 'transparent',
-        borderRadius: 2,
-      }}
-    >{children}</div>
+    <button onClick={onClick} onMouseEnter={()=>setHov(true)} onMouseLeave={()=>setHov(false)}
+      style={{ background:s.bg, border:s.border, color:s.color, cursor:'pointer', fontSize:11,
+        fontFamily:FONT, padding:'9px 16px', transition:'all 0.15s', letterSpacing:'0.08em' }}>
+      {label}
+    </button>
+  )
+}
+
+// 모바일 전체화면 모달
+function MobileModal({ open, onClose, children }) {
+  useEffect(() => {
+    document.body.style.overflow = open ? 'hidden' : ''
+    return () => { document.body.style.overflow = '' }
+  }, [open])
+
+  return (
+    <div style={{
+      position:'fixed', inset:0, zIndex:200,
+      pointerEvents: open ? 'auto' : 'none',
+    }}>
+      {/* 배경 */}
+      <div onClick={onClose} style={{
+        position:'absolute', inset:0,
+        background: open ? 'rgba(0,0,0,0.7)' : 'transparent',
+        transition:'background 0.3s ease',
+      }}/>
+      {/* 패널 */}
+      <div style={{
+        position:'absolute', bottom:0, left:0, right:0,
+        background:'#0b0b09',
+        borderTop:`1px solid #252523`,
+        borderRadius:'20px 20px 0 0',
+        maxHeight:'92vh',
+        transform: open ? 'translateY(0)' : 'translateY(100%)',
+        transition:'transform 0.38s cubic-bezier(0.32,0.72,0,1)',
+        display:'flex', flexDirection:'column',
+      }}>
+        {/* 핸들 */}
+        <div style={{ padding:'14px 0 0', display:'flex', justifyContent:'center', flexShrink:0 }}>
+          <div style={{ width:36, height:3, background:'#2a2a28', borderRadius:2 }}/>
+        </div>
+        {/* 닫기 */}
+        <button onClick={onClose} style={{
+          position:'absolute', top:12, right:16,
+          background:'transparent', border:'none', color:'#444',
+          cursor:'pointer', fontSize:20, fontFamily:FONT, lineHeight:1,
+          padding:'4px 8px',
+        }}>×</button>
+        {/* 콘텐츠 */}
+        <div style={{ flex:1, overflowY:'auto', padding:`20px 20px max(32px, env(safe-area-inset-bottom))` }}>
+          {children}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// 모바일 질문 카드 (스와이프)
+function QuestionCards({ pending, qStats, setQStats, onAnswer, submitting }) {
+  const [idx, setIdx] = useState(0)
+  const [dragX, setDragX] = useState(0)
+  const [answers, setAnswers] = useState({})
+  const startX = useRef(0)
+  const dragging = useRef(false)
+
+  // pending 변경 시 idx 범위 보정
+  useEffect(() => {
+    if (idx >= pending.length && pending.length > 0) {
+      setIdx(Math.max(0, pending.length - 1))
+    }
+  }, [pending.length])
+
+  const currentQ = pending[idx]
+  const qType = detectQuestionType(currentQ?.request_to_ben)
+  const total = pending.length
+
+  const handleTouchStart = e => { startX.current = e.touches[0].clientX; dragging.current = true }
+  const handleTouchMove  = e => { if (dragging.current) setDragX(e.touches[0].clientX - startX.current) }
+  const handleTouchEnd   = () => {
+    dragging.current = false
+    if (dragX < -60 && idx < total - 1) setIdx(i => i + 1)
+    if (dragX >  60 && idx > 0)         setIdx(i => i - 1)
+    setDragX(0)
+  }
+
+  async function doAnswer(answer, skip=false) {
+    await onAnswer(currentQ.id, answer, skip)
+    setQStats(p => skip ? {...p, skipped:p.skipped+1} : {...p, answered:p.answered+1})
+    if (idx < total - 1) setIdx(i => i + 1)
+    else setIdx(Math.max(0, idx - 1))
+  }
+
+  if (!currentQ) return (
+    <div style={{ padding:'60px 0', textAlign:'center' }}>
+      <p style={{ fontSize:14, color:'#444', fontFamily:FONT }}>미답변 요청 없어.</p>
+    </div>
+  )
+
+  return (
+    <div>
+      {/* 카운터 */}
+      <div style={{ display:'flex', gap:20, marginBottom:24, justifyContent:'center' }}>
+        <span style={{ fontSize:12, fontFamily:FONT, color:'#666' }}>남음&nbsp;<span style={{ color:YELLOW }}>{total}</span></span>
+        <span style={{ fontSize:12, fontFamily:FONT, color:'#555' }}>답변&nbsp;<span style={{ color:'#5a8' }}>{qStats.answered}</span></span>
+        <span style={{ fontSize:12, fontFamily:FONT, color:'#444' }}>스킵&nbsp;<span style={{ color:'#555' }}>{qStats.skipped}</span></span>
+      </div>
+
+      {/* 카드 */}
+      <div style={{ position:'relative', overflow:'hidden', marginBottom:24 }}>
+        {/* 뒤 카드 힌트 */}
+        {idx < total - 1 && (
+          <div style={{
+            position:'absolute', top:8, left:'50%', transform:'translateX(-50%)',
+            width:'calc(100% - 32px)', height:'100%',
+            background:'#0f0f0d', borderRadius:12, border:`1px solid #1a1a18`,
+          }}/>
+        )}
+        {/* 현재 카드 */}
+        <div
+          onTouchStart={handleTouchStart}
+          onTouchMove={handleTouchMove}
+          onTouchEnd={handleTouchEnd}
+          style={{
+            position:'relative', zIndex:1,
+            background:'#111110', borderRadius:12, border:`1px solid #252523`,
+            padding:'28px 24px',
+            transform: dragging ? `translateX(${dragX}px) rotate(${dragX*0.02}deg)` : 'translateX(0)',
+            transition: dragging ? 'none' : 'transform 0.35s cubic-bezier(0.32,0.72,0,1)',
+            userSelect:'none',
+          }}
+        >
+          <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:20 }}>
+            <Label color={YELLOW}>질문 {idx+1}/{total}</Label>
+            <div style={{ display:'flex', gap:6 }}>
+              {Array.from({length:Math.min(total,5)}).map((_,i)=>(
+                <div key={i} onClick={()=>setIdx(i)} style={{
+                  width:6, height:6, borderRadius:'50%',
+                  background: i===idx ? YELLOW : '#2a2a28',
+                  cursor:'pointer', transition:'background 0.2s',
+                }}/>
+              ))}
+            </div>
+          </div>
+          <p style={{ fontSize:16, color:'#d8d8d0', lineHeight:1.85, margin:'0 0 28px', fontFamily:FONT }}>
+            {currentQ.request_to_ben}
+          </p>
+
+          {/* 스마트 답변 */}
+          {qType === 'yesno' && (
+            <div style={{ display:'flex', gap:8 }}>
+              <button onClick={()=>doAnswer('예')} style={{ flex:1, background:YELLOW, border:'none', color:'#000', cursor:'pointer', fontSize:13, fontFamily:FONT, padding:'14px', borderRadius:8, fontWeight:700 }}>예</button>
+              <button onClick={()=>doAnswer('아니오')} style={{ flex:1, background:'#1a1a18', border:`1px solid #2a2a28`, color:'#aaa', cursor:'pointer', fontSize:13, fontFamily:FONT, padding:'14px', borderRadius:8 }}>아니오</button>
+              <button onClick={()=>doAnswer(null,true)} style={{ width:52, background:'transparent', border:`1px solid #1c1c1a`, color:'#333', cursor:'pointer', fontSize:11, fontFamily:FONT, padding:'14px 0', borderRadius:8 }}>—</button>
+            </div>
+          )}
+          {qType === 'review' && (
+            <div style={{ display:'flex', gap:8 }}>
+              <button onClick={()=>doAnswer('진행하자')} style={{ flex:1, background:YELLOW, border:'none', color:'#000', cursor:'pointer', fontSize:13, fontFamily:FONT, padding:'14px', borderRadius:8, fontWeight:700 }}>진행하자</button>
+              <button onClick={()=>doAnswer('나중에')} style={{ flex:1, background:'#1a1a18', border:`1px solid #2a2a28`, color:'#aaa', cursor:'pointer', fontSize:13, fontFamily:FONT, padding:'14px', borderRadius:8 }}>나중에</button>
+              <button onClick={()=>doAnswer(null,true)} style={{ width:52, background:'transparent', border:`1px solid #1c1c1a`, color:'#333', cursor:'pointer', fontSize:11, fontFamily:FONT, padding:'14px 0', borderRadius:8 }}>—</button>
+            </div>
+          )}
+          {qType === 'free' && (
+            <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
+              <textarea value={answers[currentQ.id]||''} onChange={e=>setAnswers(p=>({...p,[currentQ.id]:e.target.value}))}
+                placeholder="답해줘." rows={3}
+                style={{ background:'#080806', border:`1px solid #2a2a28`, borderRadius:8,
+                  color:'#d8d8d0', fontSize:15, padding:'14px', resize:'none',
+                  fontFamily:FONT, lineHeight:1.6, outline:'none', width:'100%' }}
+              />
+              <div style={{ display:'flex', gap:8 }}>
+                <button onClick={()=>doAnswer(answers[currentQ.id])} disabled={!answers[currentQ.id]?.trim()||submitting[currentQ.id]}
+                  style={{ flex:1, background:answers[currentQ.id]?.trim()?YELLOW:'#1a1a18',
+                    border:'none', color:answers[currentQ.id]?.trim()?'#000':'#444',
+                    cursor:'pointer', fontSize:13, fontFamily:FONT, padding:'14px', borderRadius:8, fontWeight:700,
+                    opacity:submitting[currentQ.id]?0.5:1 }}>
+                  {submitting[currentQ.id]?'...':'전달'}
+                </button>
+                <button onClick={()=>doAnswer(null,true)}
+                  style={{ width:80, background:'transparent', border:`1px solid #1c1c1a`, color:'#333',
+                    cursor:'pointer', fontSize:11, fontFamily:FONT, padding:'14px 0', borderRadius:8 }}>
+                  스킵
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* 스와이프 힌트 */}
+      {total > 1 && (
+        <p style={{ textAlign:'center', fontSize:10, color:'#2a2a28', fontFamily:FONT, letterSpacing:'0.15em' }}>
+          ← 스와이프로 이동 →
+        </p>
+      )}
+    </div>
   )
 }
 
 export default function DashboardPage() {
   const router = useRouter()
-  const [data, setData] = useState(null)
+  const [data,    setData]    = useState(null)
   const [loading, setLoading] = useState(true)
   const [answers, setAnswers] = useState({})
   const [submitting, setSubmitting] = useState({})
-  const [qIndex, setQIndex] = useState(0)
-  const [qStats, setQStats] = useState({ answered: 0, skipped: 0 })
+  const [qIndex,  setQIndex]  = useState(0)
+  const [qStats,  setQStats]  = useState({ answered:0, skipped:0 })
   const [selectedTopic, setSelectedTopic] = useState(null)
   const [serviceRunning, setServiceRunning] = useState(false)
   const [isMobile, setIsMobile] = useState(false)
-  const [bottomSheetOpen, setBottomSheetOpen] = useState(false)
-  const touchStartY = useRef(0)
+  const [showQuestions, setShowQuestions] = useState(false)
+  const [showService,   setShowService]   = useState(false)
 
   useEffect(() => {
-    const check = () => setIsMobile(window.innerWidth < 900)
+    const check = () => setIsMobile(window.innerWidth < 960)
     check(); window.addEventListener('resize', check)
     return () => window.removeEventListener('resize', check)
   }, [])
 
-  const loadDashboard = useCallback(() => {
+  const load = useCallback(() => {
     setLoading(true)
     fetch(`${KIN_API}/api/kin/dashboard`)
       .then(r => r.json())
@@ -106,275 +301,230 @@ export default function DashboardPage() {
       .catch(() => setLoading(false))
   }, [])
 
-  useEffect(() => { loadDashboard() }, [loadDashboard])
+  useEffect(() => { load() }, [load])
 
-  useEffect(() => {
-    if (typeof document !== 'undefined') {
-      document.body.style.overflow = bottomSheetOpen ? 'hidden' : ''
-    }
-    return () => { if (typeof document !== 'undefined') document.body.style.overflow = '' }
-  }, [bottomSheetOpen])
-
-  async function doAnswer(id, answer, skip = false) {
-    setSubmitting(p => ({ ...p, [id]: true }))
+  async function doAnswer(id, answer, skip=false) {
+    setSubmitting(p=>({...p,[id]:true}))
     try {
       await fetch(`${KIN_API}/api/kin/answer-request/${id}`, {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(skip ? { skip: true } : { answer }),
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify(skip ? {skip:true} : {answer}),
       })
-      setQStats(p => skip ? { ...p, skipped: p.skipped + 1 } : { ...p, answered: p.answered + 1 })
-      // 다음 질문으로 이동
-      setQIndex(i => {
-        const pending = data?.pendingRequests || []
-        return Math.min(i, pending.length - 2)
-      })
-      loadDashboard()
-    } finally {
-      setSubmitting(p => ({ ...p, [id]: false }))
-    }
+      setQStats(p => skip ? {...p, skipped:p.skipped+1} : {...p, answered:p.answered+1})
+      setQIndex(i => Math.max(0, i))
+      load()
+    } finally { setSubmitting(p=>({...p,[id]:false})) }
   }
 
-  async function runServiceReflection() {
+  async function runReflection() {
     setServiceRunning(true)
     try {
       await fetch(`${KIN_API}/api/kin/service-reflection`, {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ limit: 50 }),
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({limit:50}),
       })
-      loadDashboard()
-    } finally {
-      setServiceRunning(false)
-    }
+      load()
+    } finally { setServiceRunning(false) }
   }
 
-  const mood      = data?.mood || 'default'
-  const pending   = data?.pendingRequests || []
-  const topics    = data?.topics || []
-  const knowledge = data?.knowledgeByCategory || {}
-  const memory    = data?.memory || {}
-  const svcStats  = data?.serviceStats || {}
-  const expBySource = data?.expBySource || {}
-  const totalKnowledge = Object.values(knowledge).reduce((a,b)=>a+b,0)
-  const unprocessedTotal = Object.values(svcStats).reduce((a,s)=>a+(s.unprocessed||0),0)
+  const mood       = data?.mood || 'default'
+  const pending    = data?.pendingRequests || []
+  const topics     = data?.topics || []
+  const knowledge  = data?.knowledgeByCategory || {}
+  const memory     = data?.memory || {}
+  const svcStats   = data?.serviceStats || {}
+  const expBySrc   = data?.expBySource || {}
+  const totalKnow  = Object.values(knowledge).reduce((a,b)=>a+b,0)
+  const unprocessed= Object.values(svcStats).reduce((a,s)=>a+(s.unprocessed||0),0)
+  const currentQ   = pending[qIndex]
+  const qType      = detectQuestionType(currentQ?.request_to_ben)
 
   const topicExps = selectedTopic
     ? (data?.recentExperiences||[]).filter(e=>e.content?.toLowerCase().includes(selectedTopic.word.toLowerCase()))
     : []
 
-  const currentQ = pending[qIndex]
-  const qType = detectQuestionType(currentQ?.request_to_ben)
-
-  // ── 질문 카드 ────────────────────────────────────────
-  const questionCard = (
-    <div>
-      <SectionHeader num={2} title="KIN이 묻는 것들" />
+  // ── 공통 패널들 ─────────────────────────────────────────────
+  const QPanel = (
+    <div style={{ height:'100%', display:'flex', flexDirection:'column' }}>
+      <SectionTitle num={2} title="KIN이 묻는 것들" />
       {pending.length === 0 ? (
-        <p style={{ fontSize:14, color:'#444', lineHeight:2 }}>미답변 요청 없어.</p>
+        <div style={{ flex:1, display:'flex', alignItems:'center', justifyContent:'center' }}>
+          <p style={{ fontSize:13, color:'#333', fontFamily:FONT }}>미답변 요청 없음</p>
+        </div>
       ) : (
-        <div>
-          {/* 누적 카운터 */}
-          <div style={{ display:'flex', gap:16, marginBottom:20 }}>
-            <span style={{ fontSize:11, color:'#888', fontFamily:"'DM Mono',monospace" }}>남음 <span style={{ color:'#FFE500' }}>{pending.length}</span></span>
-            <span style={{ fontSize:11, color:'#555', fontFamily:"'DM Mono',monospace" }}>답변 <span style={{ color:'#6a6' }}>{qStats.answered}</span></span>
-            <span style={{ fontSize:11, color:'#555', fontFamily:"'DM Mono',monospace" }}>스킵 <span style={{ color:'#888' }}>{qStats.skipped}</span></span>
+        <div style={{ flex:1, display:'flex', flexDirection:'column' }}>
+          <div style={{ display:'flex', gap:20, marginBottom:20 }}>
+            <span style={{ fontSize:11, fontFamily:FONT, color:'#555' }}>남음&nbsp;<span style={{ color:YELLOW }}>{pending.length}</span></span>
+            <span style={{ fontSize:11, fontFamily:FONT, color:'#444' }}>답변&nbsp;<span style={{ color:'#5a8' }}>{qStats.answered}</span></span>
+            <span style={{ fontSize:11, fontFamily:FONT, color:'#333' }}>스킵&nbsp;<span style={{ color:'#555' }}>{qStats.skipped}</span></span>
           </div>
-
-          {/* 질문 내용 */}
           {currentQ && (
-            <div style={{ borderLeft:'3px solid #FFE500', paddingLeft:16, marginBottom:20 }}>
-              <p style={{ fontSize:15, color:'#e0e0d8', lineHeight:1.85, margin:'0 0 20px' }}>
-                {currentQ.request_to_ben}
-              </p>
-
-              {/* 스마트 답변 버튼 */}
-              {qType === 'yesno' && (
-                <div style={{ display:'flex', gap:8, flexWrap:'wrap' }}>
-                  <AnswerBtn label="예" onClick={() => doAnswer(currentQ.id, '예')} accent />
-                  <AnswerBtn label="아니오" onClick={() => doAnswer(currentQ.id, '아니오')} />
-                  <AnswerBtn label="답 안 하겠음" onClick={() => doAnswer(currentQ.id, null, true)} muted />
-                </div>
-              )}
-              {qType === 'review' && (
-                <div style={{ display:'flex', gap:8, flexWrap:'wrap' }}>
-                  <AnswerBtn label="진행하자" onClick={() => doAnswer(currentQ.id, '진행하자')} accent />
-                  <AnswerBtn label="나중에" onClick={() => doAnswer(currentQ.id, '나중에')} />
-                  <AnswerBtn label="답 안 하겠음" onClick={() => doAnswer(currentQ.id, null, true)} muted />
-                </div>
-              )}
-              {qType === 'free' && (
-                <div>
-                  <div style={{ display:'flex', gap:8, alignItems:'flex-end' }}>
-                    <textarea
-                      value={answers[currentQ.id]||''}
-                      onChange={e=>setAnswers(p=>({...p,[currentQ.id]:e.target.value}))}
-                      placeholder="답해줘."
-                      rows={2}
-                      style={{
-                        flex:1, background:'#0a0a08', border:'1px solid #2a2a28',
-                        color:'#e0e0d8', fontSize:14, padding:'10px 12px',
-                        resize:'none', fontFamily:"'DM Mono',monospace", lineHeight:1.6, outline:'none',
-                      }}
-                    />
-                    <button
-                      onClick={() => doAnswer(currentQ.id, answers[currentQ.id])}
-                      disabled={submitting[currentQ.id]||!answers[currentQ.id]?.trim()}
-                      style={{
-                        background: answers[currentQ.id]?.trim() ? '#FFE500':'transparent',
-                        border:'1px solid #FFE500', color: answers[currentQ.id]?.trim() ? '#000':'#FFE500',
-                        cursor:'pointer', fontSize:12, fontFamily:"'DM Mono',monospace",
-                        padding:'10px 16px', transition:'all 0.2s',
-                        opacity: submitting[currentQ.id]?0.5:1,
-                      }}
-                    >{submitting[currentQ.id]?'...':'전달'}</button>
+            <div style={{ flex:1, display:'flex', flexDirection:'column' }}>
+              <div style={{ flex:1, borderLeft:`2px solid ${YELLOW}`, paddingLeft:16, marginBottom:20 }}>
+                <p style={{ fontSize:14, color:'#d8d8d0', lineHeight:1.9, margin:0, fontFamily:FONT }}>{currentQ.request_to_ben}</p>
+              </div>
+              <div style={{ marginBottom:14 }}>
+                {qType === 'yesno' && (
+                  <div style={{ display:'flex', gap:6, flexWrap:'wrap' }}>
+                    <SmartBtn label="예" onClick={()=>doAnswer(currentQ.id,'예')} variant="primary" />
+                    <SmartBtn label="아니오" onClick={()=>doAnswer(currentQ.id,'아니오')} />
+                    <SmartBtn label="답 안 하겠음" onClick={()=>doAnswer(currentQ.id,null,true)} variant="muted" />
                   </div>
-                  <button
-                    onClick={() => doAnswer(currentQ.id, null, true)}
-                    style={{
-                      marginTop:8, background:'transparent', border:'none',
-                      color:'#444', cursor:'pointer', fontSize:11,
-                      fontFamily:"'DM Mono',monospace", padding:0, letterSpacing:'0.1em',
-                    }}
-                  >답 안 하겠음 →</button>
+                )}
+                {qType === 'review' && (
+                  <div style={{ display:'flex', gap:6, flexWrap:'wrap' }}>
+                    <SmartBtn label="진행하자" onClick={()=>doAnswer(currentQ.id,'진행하자')} variant="primary" />
+                    <SmartBtn label="나중에" onClick={()=>doAnswer(currentQ.id,'나중에')} />
+                    <SmartBtn label="답 안 하겠음" onClick={()=>doAnswer(currentQ.id,null,true)} variant="muted" />
+                  </div>
+                )}
+                {qType === 'free' && (
+                  <div style={{ display:'flex', flexDirection:'column', gap:8 }}>
+                    <div style={{ display:'flex', gap:6 }}>
+                      <textarea value={answers[currentQ.id]||''} onChange={e=>setAnswers(p=>({...p,[currentQ.id]:e.target.value}))}
+                        placeholder="답해줘." rows={2}
+                        style={{ flex:1, background:'#080806', border:`1px solid #252523`, color:'#d8d8d0',
+                          fontSize:13, padding:'10px 12px', resize:'none', fontFamily:FONT, lineHeight:1.6, outline:'none' }}/>
+                      <button onClick={()=>doAnswer(currentQ.id,answers[currentQ.id])}
+                        disabled={submitting[currentQ.id]||!answers[currentQ.id]?.trim()}
+                        style={{ background:answers[currentQ.id]?.trim()?YELLOW:'transparent', border:`1px solid ${YELLOW}`,
+                          color:answers[currentQ.id]?.trim()?'#000':YELLOW, cursor:'pointer', fontSize:11,
+                          fontFamily:FONT, padding:'0 14px', transition:'all 0.15s', opacity:submitting[currentQ.id]?0.4:1 }}>
+                        {submitting[currentQ.id]?'...':'전달'}
+                      </button>
+                    </div>
+                    <button onClick={()=>doAnswer(currentQ.id,null,true)}
+                      style={{ background:'transparent', border:'none', color:'#333', cursor:'pointer', fontSize:10, fontFamily:FONT, textAlign:'left', letterSpacing:'0.1em' }}>
+                      답 안 하겠음 →
+                    </button>
+                  </div>
+                )}
+              </div>
+              {pending.length > 1 && (
+                <div style={{ display:'flex', alignItems:'center', gap:8, borderTop:`1px solid ${BORDER}`, paddingTop:12 }}>
+                  <button onClick={()=>setQIndex(i=>Math.max(0,i-1))} disabled={qIndex===0}
+                    style={{ background:'transparent', border:`1px solid ${qIndex===0?'#1a1a18':'#2a2a28'}`, color:qIndex===0?'#222':'#666', cursor:qIndex===0?'default':'pointer', padding:'6px 14px', fontFamily:FONT, fontSize:13 }}>←</button>
+                  <span style={{ flex:1, textAlign:'center', fontSize:10, color:'#444', fontFamily:FONT, letterSpacing:'0.15em' }}>{qIndex+1} / {pending.length}</span>
+                  <button onClick={()=>setQIndex(i=>Math.min(pending.length-1,i+1))} disabled={qIndex===pending.length-1}
+                    style={{ background:'transparent', border:`1px solid ${qIndex===pending.length-1?'#1a1a18':'#2a2a28'}`, color:qIndex===pending.length-1?'#222':'#666', cursor:qIndex===pending.length-1?'default':'pointer', padding:'6px 14px', fontFamily:FONT, fontSize:13 }}>→</button>
                 </div>
               )}
             </div>
           )}
-
-          {/* 페이지네이션 */}
-          {pending.length > 1 && (
-            <div style={{ display:'flex', alignItems:'center', gap:12, marginTop:16 }}>
-              <button
-                onClick={() => setQIndex(i=>Math.max(0,i-1))}
-                disabled={qIndex===0}
-                style={{ background:'transparent', border:'1px solid #2a2a28', color: qIndex===0?'#333':'#888', cursor: qIndex===0?'default':'pointer', padding:'6px 12px', fontFamily:"'DM Mono',monospace", fontSize:14, transition:'all 0.2s' }}
-              >←</button>
-              <span style={{ fontSize:11, color:'#555', fontFamily:"'DM Mono',monospace", flex:1, textAlign:'center' }}>
-                {qIndex+1} / {pending.length}
-              </span>
-              <button
-                onClick={() => setQIndex(i=>Math.min(pending.length-1,i+1))}
-                disabled={qIndex===pending.length-1}
-                style={{ background:'transparent', border:'1px solid #2a2a28', color: qIndex===pending.length-1?'#333':'#888', cursor: qIndex===pending.length-1?'default':'pointer', padding:'6px 12px', fontFamily:"'DM Mono',monospace", fontSize:14, transition:'all 0.2s' }}
-              >→</button>
-            </div>
-          )}
         </div>
       )}
     </div>
   )
 
-  const sectionRelation = (
-    <div>
-      <SectionHeader num={3} title="우리의 관계" />
-      {memory.user_profile ? (
-        <div style={{ marginBottom:20 }}>
-          <p style={{ fontSize:10, letterSpacing:'0.2em', color:'#FFE500', marginBottom:10, textTransform:'uppercase' }}>KIN이 보는 BEN</p>
-          <p style={{ fontSize:14, color:'#ccc', lineHeight:1.9, margin:0 }}>
-            {memory.user_profile.slice(0,220)}{memory.user_profile.length>220?'...':''}
-          </p>
-        </div>
-      ) : <p style={{ fontSize:14, color:'#444', marginBottom:20 }}>아직 없어.</p>}
-      {data?.lastReflection && (
-        <div>
-          <p style={{ fontSize:10, letterSpacing:'0.2em', color:'#555', marginBottom:12, textTransform:'uppercase' }}>마지막 Reflection</p>
-          <p style={{ fontSize:13, color:'#888', lineHeight:1.8, margin:'0 0 8px' }}>✓ {data.lastReflection.what_worked}</p>
-          <p style={{ fontSize:13, color:'#555', lineHeight:1.8, margin:0 }}>△ {data.lastReflection.what_to_improve}</p>
-          <p style={{ fontSize:10, color:'#333', marginTop:8 }}>{new Date(data.lastReflection.created_at).toLocaleString('ko-KR')}</p>
-        </div>
-      )}
-    </div>
-  )
-
-  const sectionEmbedding = (
-    <div>
-      <SectionHeader num={1} title="Embedding Space" />
+  const EmbeddingPanel = (
+    <div style={{ height:'100%', display:'flex', flexDirection:'column' }}>
+      <SectionTitle num={1} title="Embedding Space" />
       {loading ? (
-        <div style={{ height:isMobile?180:340, display:'flex', alignItems:'center', justifyContent:'center', color:'#333', fontSize:12 }}>loading...</div>
+        <div style={{ flex:1, display:'flex', alignItems:'center', justifyContent:'center' }}>
+          <span style={{ fontSize:11, color:'#2a2a28', fontFamily:FONT, letterSpacing:'0.2em' }}>loading</span>
+        </div>
       ) : isMobile ? (
-        <div style={{ display:'flex', flexWrap:'wrap', gap:8, padding:'4px 0 16px' }}>
+        <div style={{ display:'flex', flexWrap:'wrap', gap:10, lineHeight:1.8 }}>
           {topics.slice(0,25).map(t=>(
             <span key={t.word} onClick={()=>setSelectedTopic(selectedTopic?.word===t.word?null:t)}
-              style={{ fontSize:Math.max(12,Math.min(24,10+t.count*1.8)), color:t.salience>=0.7?'#FFE500':'#ccc',
-                opacity:selectedTopic&&selectedTopic.word!==t.word?0.25:1, cursor:'pointer', padding:'2px 4px',
-                background:selectedTopic?.word===t.word?'rgba(255,229,0,0.08)':'transparent',
-                transition:'all 0.2s', fontFamily:"'DM Mono',monospace" }}>{t.word}</span>
+              style={{ fontSize:Math.max(14,Math.min(26,11+t.count*1.6)), color:t.salience>=0.7?YELLOW:'#ccc',
+                opacity:selectedTopic&&selectedTopic.word!==t.word?0.2:1, cursor:'pointer',
+                background:selectedTopic?.word===t.word?'rgba(255,229,0,0.07)':'transparent',
+                padding:'2px 6px', transition:'all 0.2s', fontFamily:FONT, borderRadius:4 }}>{t.word}</span>
           ))}
         </div>
       ) : (
-        <WordCloud topics={topics} onTopicClick={t=>setSelectedTopic(selectedTopic?.word===t.word?null:t)} />
+        <div style={{ flex:1 }}>
+          <WordCloud topics={topics} onTopicClick={t=>setSelectedTopic(selectedTopic?.word===t.word?null:t)} />
+        </div>
       )}
       {selectedTopic && (
-        <div style={{ marginTop:16, borderTop:'1px solid #1a1a18', paddingTop:16 }}>
-          <p style={{ fontSize:10, letterSpacing:'0.2em', color:'#FFE500', marginBottom:12, textTransform:'uppercase' }}>
-            "{selectedTopic.word}" 관련 경험 {topicExps.length}개
-          </p>
-          {topicExps.length===0 ? <p style={{ fontSize:13, color:'#444' }}>최근 경험에서 찾을 수 없어.</p>
-          : topicExps.slice(0,3).map((e,i)=>(
-            <div key={i} style={{ marginBottom:10, padding:'10px 14px', background:'#0a0a08', borderLeft:'2px solid #2a2a28' }}>
-              <p style={{ fontSize:11, color:'#555', margin:'0 0 5px' }}>{new Date(e.created_at).toLocaleDateString('ko-KR')} · {e.source}</p>
-              <p style={{ fontSize:13, color:'#bbb', margin:0, lineHeight:1.7 }}>{e.content.slice(0,140)}...</p>
-            </div>
-          ))}
+        <div style={{ borderTop:`1px solid ${BORDER}`, paddingTop:14, marginTop:8 }}>
+          <Label color={YELLOW}>"{selectedTopic.word}" 관련 {topicExps.length}개</Label>
+          <div style={{ marginTop:10, display:'flex', flexDirection:'column', gap:8 }}>
+            {topicExps.length===0
+              ? <p style={{ fontSize:12, color:'#333', fontFamily:FONT }}>최근 경험 없음</p>
+              : topicExps.slice(0,2).map((e,i)=>(
+                <div key={i} style={{ padding:'10px 12px', background:'#070705', borderLeft:`1px solid #252523` }}>
+                  <p style={{ fontSize:10, color:'#444', margin:'0 0 5px', fontFamily:FONT }}>{e.source} · {new Date(e.created_at).toLocaleDateString('ko-KR')}</p>
+                  <p style={{ fontSize:13, color:'#888', margin:0, lineHeight:1.7, fontFamily:FONT }}>{e.content.slice(0,120)}...</p>
+                </div>
+              ))
+            }
+          </div>
         </div>
       )}
     </div>
   )
 
-  const sectionGrowth = (
+  const RelationPanel = (
     <div>
-      <SectionHeader num={4} title="KIN의 성장" />
-      <div style={{ display:'flex', gap:isMobile?24:36, marginBottom:28, flexWrap:'wrap' }}>
-        <StatBox label="총 경험" value={data?.experienceCount||0} accent="#FFE500" size={isMobile?28:38} />
-        <StatBox label="Knowledge" value={data?.knowledgeCount||0} size={isMobile?28:38} />
-        <StatBox label="메모리 레이어" value={Object.values(memory).filter(Boolean).length} size={isMobile?28:38} />
-      </div>
-      <p style={{ fontSize:10, letterSpacing:'0.2em', color:'#444', marginBottom:12, textTransform:'uppercase' }}>Experience 소스</p>
-      {Object.entries(expBySource).map(([src,cnt])=>(
-        <BarRow key={src} label={src.replace('service:','')} value={cnt} max={Math.max(1, ...Object.values(expBySource))} color="#FFE500" />
-      ))}
-      <p style={{ fontSize:10, letterSpacing:'0.2em', color:'#444', marginTop:18, marginBottom:12, textTransform:'uppercase' }}>Knowledge 카테고리</p>
-      {Object.entries(knowledge).map(([cat,cnt])=>(
-        <BarRow key={cat} label={cat} value={cnt} max={totalKnowledge} color="#555" />
-      ))}
+      <SectionTitle num={3} title="우리의 관계" />
+      {memory.user_profile ? (
+        <div style={{ marginBottom:20 }}>
+          <Label color={YELLOW}>KIN이 보는 BEN</Label>
+          <p style={{ fontSize:isMobile?14:13, color:'#bbb', lineHeight:1.9, margin:'10px 0 0', fontFamily:FONT }}>
+            {memory.user_profile.slice(0,200)}{memory.user_profile.length>200?'...':''}
+          </p>
+        </div>
+      ) : <p style={{ fontSize:13, color:'#333', fontFamily:FONT, marginBottom:20 }}>아직 없어.</p>}
+      {data?.lastReflection && (
+        <div style={{ borderTop:`1px solid ${BORDER}`, paddingTop:16 }}>
+          <Label>마지막 Reflection</Label>
+          <p style={{ fontSize:isMobile?13:12, color:'#777', lineHeight:1.8, margin:'10px 0 6px', fontFamily:FONT }}>✓ {data.lastReflection.what_worked}</p>
+          <p style={{ fontSize:isMobile?13:12, color:'#444', lineHeight:1.8, margin:0, fontFamily:FONT }}>△ {data.lastReflection.what_to_improve}</p>
+          <p style={{ fontSize:9, color:'#2a2a28', marginTop:8, fontFamily:FONT }}>{new Date(data.lastReflection.created_at).toLocaleString('ko-KR')}</p>
+        </div>
+      )}
     </div>
   )
 
-  const sectionService = (
+  const GrowthPanel = (
     <div>
-      <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:0, flexWrap:'wrap', gap:12 }}>
-        <div>
-          <div style={{ height:1, background:'#1f1f1d', marginBottom:12 }}/>
-          <div style={{ display:'flex', alignItems:'baseline', gap:10 }}>
-            <span style={{ fontSize:10, color:'#444', fontFamily:"'DM Mono',monospace" }}>05</span>
-            <span style={{ fontSize:17, color:'#FFE500', fontFamily:"'DM Mono',monospace" }}>서비스 현황</span>
-          </div>
-        </div>
-        <button
-          onClick={runServiceReflection}
-          disabled={serviceRunning || unprocessedTotal===0}
-          style={{
-            background:'transparent',
-            border:`1px solid ${serviceRunning||unprocessedTotal===0?'#222':'#444'}`,
-            color: serviceRunning||unprocessedTotal===0?'#333':'#888',
-            cursor: serviceRunning||unprocessedTotal===0?'default':'pointer',
-            fontSize:11, fontFamily:"'DM Mono',monospace", padding:'8px 16px',
-            letterSpacing:'0.08em', transition:'all 0.2s',
-          }}
-        >
-          {serviceRunning ? '처리 중...' : unprocessedTotal===0 ? '미처리 없음' : `Service Reflection 실행 (${unprocessedTotal})`}
-        </button>
+      <SectionTitle num={4} title="KIN의 성장" />
+      <div style={{ display:'flex', gap:28, marginBottom:28, flexWrap:'wrap' }}>
+        <Num label="총 경험" value={data?.experienceCount||0} color={YELLOW} size={isMobile?32:36} />
+        <Num label="Knowledge" value={data?.knowledgeCount||0} color="#fff" size={isMobile?32:36} />
+        <Num label="메모리 레이어" value={Object.values(memory).filter(Boolean).length} color="#555" size={isMobile?32:36} />
       </div>
-      <div style={{ marginTop:20, display:'grid', gridTemplateColumns:isMobile?'1fr':'repeat(auto-fit, minmax(220px,1fr))', gap:2 }}>
+      <div style={{ marginBottom:10 }}><Label>Experience 소스</Label></div>
+      <div style={{ marginBottom:20 }}>
+        {Object.entries(expBySrc).map(([src,cnt])=>(
+          <Bar key={src} label={src.replace('service:','')} value={cnt} max={Math.max(1,...Object.values(expBySrc))} color={YELLOW} />
+        ))}
+      </div>
+      <div style={{ marginBottom:10 }}><Label>Knowledge 카테고리</Label></div>
+      <div>
+        {Object.entries(knowledge).map(([cat,cnt])=>(
+          <Bar key={cat} label={cat} value={cnt} max={Math.max(1,totalKnow)} color="#444" />
+        ))}
+      </div>
+    </div>
+  )
+
+  const ServiceContent = (
+    <div>
+      <SectionTitle num={5} title="서비스 현황"
+        action={
+          <button onClick={runReflection} disabled={serviceRunning||unprocessed===0}
+            style={{ background:'transparent', border:`1px solid ${serviceRunning||unprocessed===0?'#1c1c1a':'#333'}`,
+              color:serviceRunning||unprocessed===0?'#2a2a28':'#666', cursor:serviceRunning||unprocessed===0?'default':'pointer',
+              fontSize:9, fontFamily:FONT, padding:'6px 12px', letterSpacing:'0.08em', transition:'all 0.2s' }}>
+            {serviceRunning?'처리 중...':unprocessed===0?'미처리 없음':`Reflection (${unprocessed})`}
+          </button>
+        }
+      />
+      <div style={{ display:'flex', flexDirection: isMobile ? 'column' : 'row', gap:2 }}>
         {Object.entries(svcStats).map(([svc,stat])=>(
-          <div key={svc} style={{ padding:'18px', background:'#0a0a08', border:'1px solid #141412' }}>
-            <p style={{ fontSize:10, letterSpacing:'0.28em', color:'#FFE500', marginBottom:14, textTransform:'uppercase' }}>{svc}</p>
-            <div style={{ display:'flex', gap:20, marginBottom:14 }}>
-              <StatBox label="총" value={stat.total} size={22} />
-              <StatBox label="처리됨" value={stat.processed} accent="#6a6" size={22} />
-              <StatBox label="미처리" value={stat.unprocessed} accent={stat.unprocessed>0?'#a44':'#444'} size={22} />
+          <div key={svc} style={{ flex:1, padding:'20px', background:'#070705', border:`1px solid ${BORDER}`, borderRadius: isMobile ? 8 : 0 }}>
+            <Label color={YELLOW}>{svc}</Label>
+            <div style={{ display:'flex', gap:20, margin:'14px 0' }}>
+              <Num label="총" value={stat.total} color="#fff" size={22} />
+              <Num label="처리됨" value={stat.processed} color="#5a8" size={22} />
+              <Num label="미처리" value={stat.unprocessed} color={stat.unprocessed>0?'#a55':'#2a2a28'} size={22} />
             </div>
-            {Object.entries(stat.byType).slice(0,4).map(([type,cnt])=>(
-              <BarRow key={type} label={type.replace('scenario_','').replace('image_','')} value={cnt} max={stat.total} color="#333" />
+            {Object.entries(stat.byType).slice(0,4).map(([t,c])=>(
+              <Bar key={t} label={t.replace('scenario_','').replace('image_','')} value={c} max={stat.total} color="#2a2a28" />
             ))}
           </div>
         ))}
@@ -382,162 +532,99 @@ export default function DashboardPage() {
     </div>
   )
 
-  // 바텀 시트 터치 핸들링
-  const handleTouchStart = e => { touchStartY.current = e.touches[0].clientY }
-  const handleTouchEnd = e => {
-    const dy = e.changedTouches[0].clientY - touchStartY.current
-    if (dy < -50) setBottomSheetOpen(true)
-    if (dy > 50)  setBottomSheetOpen(false)
-  }
-
   return (
-    <div style={{ background:'#080806', minHeight:'100vh', color:'#fff', fontFamily:"'DM Mono',monospace" }}>
+    <div style={{ background:BG, minHeight:'100vh', color:'#fff', fontFamily:FONT }}>
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400&display=swap');
         *{box-sizing:border-box;margin:0;padding:0;}
         textarea{outline:none;}
-        ::-webkit-scrollbar{width:3px;}
-        ::-webkit-scrollbar-thumb{background:#2a2a28;}
+        button{font-family:'DM Mono',monospace;}
+        ::-webkit-scrollbar{width:2px;}
+        ::-webkit-scrollbar-thumb{background:#222;}
       `}</style>
 
       {/* HEADER */}
-      <div style={{
-        position:'sticky', top:0, zIndex:50,
-        background:'rgba(8,8,6,0.97)', borderBottom:'1px solid #141412',
-        backdropFilter:'blur(8px)',
-        display:'flex', alignItems:'center', gap:16,
-        padding: isMobile?'12px 16px':'14px 32px',
+      <header style={{
+        position:'sticky', top:0, zIndex:100,
+        background:'rgba(8,8,6,0.96)', borderBottom:`1px solid ${BORDER}`,
+        backdropFilter:'blur(12px)',
+        display:'flex', alignItems:'center', gap:10,
+        padding: isMobile?'10px 14px':'12px 32px',
       }}>
-        <div style={{ position:'relative', width:isMobile?44:52, height:isMobile?44:52, flexShrink:0 }}>
-          <Image src={MOOD_IMAGE[mood]} alt="KIN" fill style={{ objectFit:'contain', transition:'all 0.3s' }} priority />
+        <div style={{ position:'relative', width:isMobile?40:48, height:isMobile?40:48, flexShrink:0 }}>
+          <Image src={MOOD_IMAGE[mood]} alt="KIN" fill style={{ objectFit:'contain', transition:'all 0.4s' }} priority />
         </div>
-        <div style={{ flex:1 }}>
-          <p style={{ fontSize:10, letterSpacing:'0.3em', color:'#FFE500', marginBottom:3 }}>KIN</p>
-          <p style={{ fontSize:11, color:'#555' }}>{loading?'...': `경험 ${data?.experienceCount||0} · knowledge ${data?.knowledgeCount||0}`}</p>
-        </div>
-        {pending.length>0 && (
-          <div style={{ background:'#FFE500', color:'#000', fontSize:10, fontWeight:700, padding:'5px 12px', letterSpacing:'0.1em', flexShrink:0 }}>
-            {pending.length}개 요청
+        <div style={{ flex:1, minWidth:0 }}>
+          <div style={{ fontSize:9, letterSpacing:'0.3em', color:YELLOW, marginBottom:2 }}>KIN</div>
+          <div style={{ fontSize:10, color:'#3a3a38', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
+            {loading?'—':`경험 ${data?.experienceCount||0} · knowledge ${data?.knowledgeCount||0}`}
           </div>
+        </div>
+
+        {/* 모바일 전용 버튼들 */}
+        {isMobile && (
+          <>
+            <button onClick={()=>setShowQuestions(true)} style={{
+              background: pending.length > 0 ? YELLOW : 'transparent',
+              border: pending.length > 0 ? 'none' : `1px solid #2a2a28`,
+              color: pending.length > 0 ? '#000' : '#444',
+              cursor:'pointer', fontSize:10, fontFamily:FONT,
+              padding:'7px 10px', letterSpacing:'0.06em', flexShrink:0,
+              borderRadius:6, fontWeight: pending.length > 0 ? 700 : 400,
+            }}>
+              {pending.length > 0 ? `질문 ${pending.length}` : '질문'}
+            </button>
+            <button onClick={()=>setShowService(true)} style={{
+              background:'transparent', border:`1px solid #2a2a28`,
+              color:'#555', cursor:'pointer', fontSize:10, fontFamily:FONT,
+              padding:'7px 10px', letterSpacing:'0.06em', flexShrink:0, borderRadius:6,
+            }}>서비스</button>
+          </>
         )}
-        <button
-          onClick={()=>router.push('/chat')}
-          style={{
-            background:'transparent', border:'1px solid #FFE500', color:'#FFE500',
-            cursor:'pointer', fontSize:12, fontFamily:"'DM Mono',monospace",
-            padding: isMobile?'8px 14px':'9px 22px', letterSpacing:'0.08em',
-            transition:'all 0.2s', flexShrink:0,
-          }}
-        >말 걸기 →</button>
-      </div>
 
-      {/* PC LAYOUT */}
+        <button onClick={()=>router.push('/chat')} style={{
+          background:'transparent', border:`1px solid ${YELLOW}`, color:YELLOW,
+          cursor:'pointer', fontSize:isMobile?10:11, fontFamily:FONT,
+          padding:isMobile?'7px 10px':'8px 20px', letterSpacing:'0.08em', transition:'all 0.2s',
+          flexShrink:0, borderRadius: isMobile ? 6 : 0,
+        }}>말 걸기 →</button>
+      </header>
+
+      {/* PC */}
       {!isMobile ? (
-        <div style={{ maxWidth:1400, margin:'0 auto', padding:'0 32px 48px' }}>
-          {/* 상단: Embedding(좌 58%) | 질문/관계(우 42%) */}
-          <div style={{ display:'grid', gridTemplateColumns:'58% 42%', borderBottom:'1px solid #141412' }}>
-            {/* 왼쪽 */}
-            <HoverSection style={{ padding:'36px 36px 36px 0', borderRight:'1px solid #141412' }}>
-              {sectionEmbedding}
-            </HoverSection>
-            {/* 오른쪽: 고정 높이 + 내부 페이지네이션 */}
-            <div style={{ display:'flex', flexDirection:'column', height: 560 }}>
-              <HoverSection style={{ padding:'36px 0 28px 36px', borderBottom:'1px solid #141412', flex:'0 0 auto', overflow:'hidden' }}>
-                {questionCard}
-              </HoverSection>
-              <HoverSection style={{ padding:'28px 0 36px 36px', flex:1, overflowY:'auto' }}>
-                {sectionRelation}
-              </HoverSection>
-            </div>
+        <main style={{ maxWidth:1440, margin:'0 auto', padding:'0 32px 48px' }}>
+          <div style={{ display:'grid', gridTemplateColumns:'58% 42%', borderBottom:`1px solid ${BORDER}` }}>
+            <div style={{ padding:'36px 32px 36px 0', borderRight:`1px solid ${BORDER}`, minHeight:520 }}>{EmbeddingPanel}</div>
+            <div style={{ padding:'36px 0 36px 32px', minHeight:520 }}>{QPanel}</div>
           </div>
-
-          {/* 하단: 성장(35%) | 서비스(65%) */}
-          <div style={{ display:'grid', gridTemplateColumns:'35% 65%' }}>
-            <HoverSection style={{ padding:'36px 36px 36px 0', borderRight:'1px solid #141412' }}>
-              {sectionGrowth}
-            </HoverSection>
-            <HoverSection style={{ padding:'36px 0 36px 36px' }}>
-              {sectionService}
-            </HoverSection>
+          <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr 1fr' }}>
+            <div style={{ padding:'32px 28px 40px 0', borderRight:`1px solid ${BORDER}` }}>{RelationPanel}</div>
+            <div style={{ padding:'32px 28px 40px', borderRight:`1px solid ${BORDER}` }}>{GrowthPanel}</div>
+            <div style={{ padding:'32px 0 40px 28px' }}>{ServiceContent}</div>
           </div>
-        </div>
+        </main>
       ) : (
-        /* MOBILE LAYOUT */
-        <div onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd}>
-          {/* 메인: Embedding + 관계 */}
-          <div style={{ padding:'24px 16px' }}>
-            <div style={{ marginBottom:36 }}>{sectionEmbedding}</div>
-            <div style={{ marginBottom:36 }}>{sectionRelation}</div>
-            <div style={{ marginBottom:36 }}>{sectionGrowth}</div>
-          </div>
-
-          {/* 바텀 시트 트리거 힌트 */}
-          {!bottomSheetOpen && (
-            <div
-              onClick={()=>setBottomSheetOpen(true)}
-              style={{
-                position:'fixed', bottom:0, left:0, right:0, zIndex:60,
-                background:'linear-gradient(transparent, rgba(8,8,6,0.98))',
-                padding:'32px 16px 16px',
-                display:'flex', flexDirection:'column', alignItems:'center', gap:6,
-                cursor:'pointer',
-              }}
-            >
-              {pending.length > 0 && (
-                <div style={{ background:'#FFE500', color:'#000', fontSize:10, fontWeight:700, padding:'5px 14px', marginBottom:4 }}>
-                  {pending.length}개 질문 답변하기
-                </div>
-              )}
-              <div style={{ fontSize:10, color:'#444', letterSpacing:'0.2em' }}>▲ 서비스 현황 / 질문</div>
-              <div style={{ width:32, height:3, background:'#333', borderRadius:2 }}/>
-            </div>
-          )}
-
-          {/* 바텀 시트 */}
-          {bottomSheetOpen && (
-            <div
-              style={{
-                position:'fixed', inset:0, zIndex:70,
-                background:'rgba(0,0,0,0.6)',
-              }}
-              onClick={()=>setBottomSheetOpen(false)}
-            >
-              <div
-                style={{
-                  position:'absolute', bottom:0, left:0, right:0,
-                  background:'#0d0d0b', borderTop:'1px solid #2a2a28',
-                  borderRadius:'16px 16px 0 0',
-                  maxHeight:'85vh', overflowY:'auto',
-                  padding:'20px 16px max(48px, env(safe-area-inset-bottom))',
-                }}
-                onClick={e=>e.stopPropagation()}
-              >
-                <div style={{ width:36, height:3, background:'#333', borderRadius:2, margin:'0 auto 24px' }}/>
-                <div style={{ marginBottom:36 }}>{questionCard}</div>
-                <div>{sectionService}</div>
-              </div>
-            </div>
-          )}
+        /* MOBILE */
+        <div style={{ padding:'20px 16px 40px' }}>
+          <div style={{ marginBottom:36 }}>{EmbeddingPanel}</div>
+          <div style={{ marginBottom:36 }}>{RelationPanel}</div>
+          <div>{GrowthPanel}</div>
         </div>
       )}
-    </div>
-  )
-}
 
-function AnswerBtn({ label, onClick, accent, muted }) {
-  const [hov, setHov] = useState(false)
-  return (
-    <button
-      onClick={onClick}
-      onMouseEnter={()=>setHov(true)}
-      onMouseLeave={()=>setHov(false)}
-      style={{
-        background: accent ? (hov?'#FFE500':'rgba(255,229,0,0.1)') : muted ? 'transparent' : (hov?'rgba(255,255,255,0.08)':'transparent'),
-        border: accent ? '1px solid #FFE500' : muted ? '1px solid #333' : '1px solid #444',
-        color: accent ? (hov?'#000':'#FFE500') : muted ? '#444' : '#888',
-        cursor:'pointer', fontSize:12, fontFamily:"'DM Mono',monospace",
-        padding:'9px 18px', transition:'all 0.18s', letterSpacing:'0.06em',
-      }}
-    >{label}</button>
+      {/* 모바일 질문 모달 */}
+      <MobileModal open={showQuestions} onClose={()=>setShowQuestions(false)}>
+        <div style={{ marginBottom:8 }}>
+          <span style={{ fontSize:18, color:YELLOW, fontFamily:FONT, letterSpacing:'0.04em' }}>KIN이 묻는 것들</span>
+        </div>
+        <div style={{ height:1, background:BORDER, margin:'16px 0 24px' }}/>
+        <QuestionCards pending={pending} qStats={qStats} setQStats={setQStats} onAnswer={doAnswer} submitting={submitting} />
+      </MobileModal>
+
+      {/* 모바일 서비스 모달 */}
+      <MobileModal open={showService} onClose={()=>setShowService(false)}>
+        {ServiceContent}
+      </MobileModal>
+    </div>
   )
 }
