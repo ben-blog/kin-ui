@@ -109,7 +109,7 @@ export default function ChatPage() {
         display: 'flex',
         alignItems: 'center',
         padding: '16px 24px',
-        borderBottom: '1px solid #111',
+        borderBottom: '1px solid #222',
         gap: '12px',
       }}>
         <button
@@ -117,20 +117,20 @@ export default function ChatPage() {
           style={{
             background: 'transparent',
             border: 'none',
-            color: '#444',
+            color: '#888',
             cursor: 'pointer',
-            fontSize: '12px',
+            fontSize: '14px',
             fontFamily: 'monospace',
             padding: 0,
           }}
         >
           ← 대시보드
         </button>
-        <span style={{ color: '#222', fontSize: '12px' }}>|</span>
-        <span style={{ color: '#FFE500', fontSize: '12px', letterSpacing: '2px' }}>KIN</span>
+        <span style={{ color: '#444', fontSize: '14px' }}>|</span>
+        <span style={{ color: '#FFE500', fontSize: '14px', letterSpacing: '2px' }}>KIN</span>
       </div>
 
-      {/* KIN 이미지 (상단 고정) */}
+      {/* KIN 이미지 */}
       <div style={{
         display: 'flex',
         justifyContent: 'center',
@@ -151,10 +151,10 @@ export default function ChatPage() {
       <div style={{
         flex: 1,
         overflowY: 'auto',
-        padding: '24px 24px 120px',
+        padding: '32px 24px 140px',
         display: 'flex',
         flexDirection: 'column',
-        gap: '20px',
+        gap: '24px',
         maxWidth: '640px',
         width: '100%',
         margin: '0 auto',
@@ -166,9 +166,9 @@ export default function ChatPage() {
             alignItems: msg.role === 'user' ? 'flex-end' : 'flex-start',
           }}>
             <p style={{
-              color: msg.role === 'user' ? '#888' : '#fff',
-              fontSize: '15px',
-              lineHeight: '1.7',
+              color: msg.role === 'user' ? '#aaa' : '#fff',
+              fontSize: '16px',
+              lineHeight: '1.8',
               margin: 0,
               maxWidth: '85%',
               whiteSpace: 'pre-wrap',
@@ -178,7 +178,7 @@ export default function ChatPage() {
           </div>
         ))}
         {loading && (
-          <p style={{ color: '#FFE500', opacity: 0.4, fontSize: '15px', margin: 0 }}>...</p>
+          <p style={{ color: '#FFE500', opacity: 0.5, fontSize: '16px', margin: 0 }}>...</p>
         )}
         <div ref={bottomRef} />
       </div>
@@ -191,7 +191,7 @@ export default function ChatPage() {
         right: 0,
         padding: '20px 24px',
         background: '#000',
-        borderTop: '1px solid #111',
+        borderTop: '1px solid #222',
       }}>
         <div style={{
           maxWidth: '640px',
@@ -211,14 +211,14 @@ export default function ChatPage() {
               flex: 1,
               background: 'transparent',
               border: 'none',
-              borderBottom: '1px solid #222',
+              borderBottom: '1px solid #333',
               color: '#fff',
-              fontSize: '15px',
+              fontSize: '16px',
               padding: '8px 0',
               outline: 'none',
               resize: 'none',
               fontFamily: 'monospace',
-              lineHeight: '1.6',
+              lineHeight: '1.7',
             }}
           />
           <button
@@ -229,7 +229,7 @@ export default function ChatPage() {
               border: 'none',
               color: '#FFE500',
               cursor: loading ? 'default' : 'pointer',
-              fontSize: '18px',
+              fontSize: '20px',
               opacity: loading || !input.trim() ? 0.3 : 1,
               padding: '0 0 8px',
             }}

@@ -48,7 +48,7 @@ export default function DashboardPage() {
       display: 'flex',
       flexDirection: 'column',
     }}>
-      {/* 상단 - KIN 이미지 + 이름 */}
+      {/* 상단 */}
       <div style={{
         display: 'flex',
         alignItems: 'flex-end',
@@ -65,15 +65,14 @@ export default function DashboardPage() {
           />
         </div>
         <div style={{ paddingBottom: '16px' }}>
-          <p style={{ color: '#FFE500', fontSize: '11px', letterSpacing: '3px', margin: '0 0 4px' }}>
+          <p style={{ color: '#FFE500', fontSize: '13px', letterSpacing: '3px', margin: '0 0 8px' }}>
             KIN
           </p>
-          <p style={{ color: '#555', fontSize: '11px', margin: 0 }}>
+          <p style={{ color: '#888', fontSize: '13px', margin: 0 }}>
             {loading ? '...' : `경험 ${expCount}개 쌓임`}
           </p>
         </div>
 
-        {/* 우상단 대화 버튼 */}
         <button
           onClick={() => router.push('/chat')}
           style={{
@@ -82,9 +81,9 @@ export default function DashboardPage() {
             background: 'transparent',
             border: '1px solid #FFE500',
             color: '#FFE500',
-            padding: '8px 20px',
+            padding: '10px 24px',
             cursor: 'pointer',
-            fontSize: '12px',
+            fontSize: '14px',
             fontFamily: 'monospace',
             letterSpacing: '1px',
           }}
@@ -93,7 +92,7 @@ export default function DashboardPage() {
         </button>
       </div>
 
-      <div style={{ height: '1px', background: '#111', margin: '24px 40px 0' }} />
+      <div style={{ height: '1px', background: '#222', margin: '24px 40px 0' }} />
 
       {/* 본문 */}
       <div style={{
@@ -101,41 +100,41 @@ export default function DashboardPage() {
         padding: '40px',
         display: 'flex',
         flexDirection: 'column',
-        gap: '48px',
+        gap: '52px',
         maxWidth: '720px',
       }}>
 
         {/* 1. KIN의 현재 */}
         <section>
-          <p style={{ color: '#333', fontSize: '11px', letterSpacing: '2px', marginBottom: '16px' }}>
+          <p style={{ color: '#666', fontSize: '12px', letterSpacing: '3px', marginBottom: '20px', textTransform: 'uppercase' }}>
             KIN의 현재
           </p>
           {loading ? (
-            <p style={{ color: '#444', fontSize: '14px' }}>...</p>
+            <p style={{ color: '#666', fontSize: '16px' }}>...</p>
           ) : reflection?.what_worked ? (
-            <p style={{ color: '#ccc', fontSize: '15px', lineHeight: '1.8', margin: 0 }}>
+            <p style={{ color: '#eee', fontSize: '17px', lineHeight: '2', margin: 0 }}>
               {reflection.what_worked}
             </p>
           ) : (
-            <p style={{ color: '#333', fontSize: '14px', margin: 0 }}>
+            <p style={{ color: '#666', fontSize: '16px', margin: 0 }}>
               아직 아무것도 없어. 말 걸어봐.
             </p>
           )}
         </section>
 
-        {/* 2. KIN이 Ben에게 */}
+        {/* 2. KIN이 하고 싶은 말 */}
         <section>
-          <p style={{ color: '#333', fontSize: '11px', letterSpacing: '2px', marginBottom: '16px' }}>
+          <p style={{ color: '#666', fontSize: '12px', letterSpacing: '3px', marginBottom: '20px', textTransform: 'uppercase' }}>
             KIN이 하고 싶은 말
           </p>
           {loading ? (
-            <p style={{ color: '#444', fontSize: '14px' }}>...</p>
+            <p style={{ color: '#666', fontSize: '16px' }}>...</p>
           ) : reflection?.request_to_ben ? (
-            <p style={{ color: '#FFE500', fontSize: '15px', lineHeight: '1.8', margin: 0 }}>
+            <p style={{ color: '#FFE500', fontSize: '17px', lineHeight: '2', margin: 0 }}>
               "{reflection.request_to_ben}"
             </p>
           ) : (
-            <p style={{ color: '#333', fontSize: '14px', margin: 0 }}>
+            <p style={{ color: '#666', fontSize: '16px', margin: 0 }}>
               아직 없어.
             </p>
           )}
@@ -143,22 +142,22 @@ export default function DashboardPage() {
 
         {/* 3. 쌓인 것들 */}
         <section>
-          <p style={{ color: '#333', fontSize: '11px', letterSpacing: '2px', marginBottom: '16px' }}>
+          <p style={{ color: '#666', fontSize: '12px', letterSpacing: '3px', marginBottom: '20px', textTransform: 'uppercase' }}>
             쌓인 것들
           </p>
-          <div style={{ display: 'flex', gap: '40px' }}>
+          <div style={{ display: 'flex', gap: '48px', alignItems: 'flex-end' }}>
             <div>
-              <p style={{ color: '#FFE500', fontSize: '28px', fontWeight: 'bold', margin: '0 0 4px' }}>
+              <p style={{ color: '#FFE500', fontSize: '36px', fontWeight: 'bold', margin: '0 0 6px' }}>
                 {expCount}
               </p>
-              <p style={{ color: '#444', fontSize: '11px', margin: 0 }}>경험</p>
+              <p style={{ color: '#888', fontSize: '13px', margin: 0 }}>경험</p>
             </div>
             {reflection && (
-              <div>
-                <p style={{ color: '#fff', fontSize: '13px', margin: '0 0 4px' }}>
+              <div style={{ paddingBottom: '8px' }}>
+                <p style={{ color: '#eee', fontSize: '15px', margin: '0 0 6px' }}>
                   {new Date(reflection.created_at).toLocaleDateString('ko-KR')}
                 </p>
-                <p style={{ color: '#444', fontSize: '11px', margin: 0 }}>마지막 Reflection</p>
+                <p style={{ color: '#888', fontSize: '13px', margin: 0 }}>마지막 Reflection</p>
               </div>
             )}
           </div>
