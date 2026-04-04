@@ -272,9 +272,9 @@ function QuestionCards({ pending, qStats, setQStats, onAnswer, submitting }) {
                 {submitting[currentQ.id]?'...':'전달'}
               </button>
               <button onClick={()=>doAnswer(null,true)}
-                style={{ width:80, background:'transparent', border:`1px solid #1c1c1a`, color:'#333',
+                style={{ width:80, background:'transparent', border:`1px solid #444`, color:'#777',
                   cursor:'pointer', fontSize:11, fontFamily:FONT, padding:'14px 0', borderRadius:8 }}>
-                스킵
+                Skip
               </button>
             </div>
           </div>
@@ -403,15 +403,23 @@ export default function DashboardPage() {
                       fontSize:13, padding:'10px 12px', resize:'none', fontFamily:FONT, lineHeight:1.6, outline:'none' }}/>
                   <button onClick={()=>doAnswer(currentQ.id,answers[currentQ.id])}
                     disabled={submitting[currentQ.id]||!answers[currentQ.id]?.trim()}
-                    style={{ background:answers[currentQ.id]?.trim()?YELLOW:'transparent', border:`1px solid ${YELLOW}`,
-                      color:answers[currentQ.id]?.trim()?'#000':YELLOW, cursor:'pointer', fontSize:11,
-                      fontFamily:FONT, padding:'0 14px', transition:'all 0.15s', opacity:submitting[currentQ.id]?0.4:1 }}>
+                    style={{
+                      background: answers[currentQ.id]?.trim() ? YELLOW : 'transparent',
+                      border: `1px solid ${answers[currentQ.id]?.trim() ? YELLOW : '#333'}`,
+                      color: answers[currentQ.id]?.trim() ? '#000' : '#444',
+                      cursor: answers[currentQ.id]?.trim() ? 'pointer' : 'default',
+                      fontSize:11, fontFamily:FONT, padding:'0 14px',
+                      transition:'all 0.15s', opacity:submitting[currentQ.id]?0.4:1 }}>
                     {submitting[currentQ.id]?'...':'전달'}
                   </button>
                 </div>
                 <button onClick={()=>doAnswer(currentQ.id,null,true)}
-                  style={{ background:'transparent', border:'none', color:'#333', cursor:'pointer', fontSize:10, fontFamily:FONT, textAlign:'left', letterSpacing:'0.1em' }}>
-                  답 안 하겠음 →
+                  style={{ background:'transparent', border:'1px solid #444', color:'#777',
+                    cursor:'pointer', fontSize:11, fontFamily:FONT, padding:'8px 16px',
+                    letterSpacing:'0.1em', transition:'all 0.2s' }}
+                  onMouseEnter={e=>{e.target.style.borderColor='#888';e.target.style.color='#aaa'}}
+                  onMouseLeave={e=>{e.target.style.borderColor='#444';e.target.style.color='#777'}}>
+                  Skip
                 </button>
               </div>
               {pending.length > 1 && (
