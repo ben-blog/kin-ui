@@ -3,16 +3,16 @@
 // 3D 인터랙티브 토픽 클라우드 — Canvas 기반, 추가 패키지 없음
 import { useEffect, useRef, useCallback } from 'react'
 
-const FONT   = 'DM Mono, monospace'
+const FONT = 'DM Mono, monospace'
 const YELLOW = [255, 229, 0]
-const WHITE  = [200, 200, 190]
+const WHITE = [200, 200, 190]
 
 // Fibonacci 구면 분포 — 단어들을 고르게 배치
 function fibonacciSphere(n, radius) {
   const phi = Math.PI * (3 - Math.sqrt(5))
   return Array.from({ length: n }, (_, i) => {
-    const y     = 1 - (i / Math.max(n - 1, 1)) * 2
-    const r     = Math.sqrt(Math.max(0, 1 - y * y))
+    const y = 1 - (i / Math.max(n - 1, 1)) * 2
+    const r = Math.sqrt(Math.max(0, 1 - y * y))
     const theta = phi * i
     return { x: Math.cos(theta) * r * radius, y: y * radius, z: Math.sin(theta) * r * radius }
   })
@@ -22,8 +22,8 @@ function fibonacciSphere(n, radius) {
 function computeCooccurrence(topics, experiences) {
   const cooc = {}
   for (const exp of experiences) {
-    const text    = (exp.content || '').toLowerCase()
-    const present = topics.filter(t => text.includes(t.word.toLowerCase()))
+    const text = (exp.content || '').toLowerCase()
+    const present = topics.filter((t) => text.includes(t.word.toLowerCase()))
     for (let i = 0; i < present.length; i++) {
       for (let j = i + 1; j < present.length; j++) {
         const key = [present[i].word, present[j].word].sort().join('§')
@@ -42,45 +42,51 @@ function project3D(x, y, z, rotX, rotY, W, H, zoom = 1, fov = 420) {
   // X축 회전
   const ry = y * Math.cos(rotX) - rz * Math.sin(rotX)
   const fz = y * Math.sin(rotX) + rz * Math.cos(rotX)
-  const scale = fov / (fov + fz + 150) * zoom
+  const scale = (fov / (fov + fz + 150)) * zoom
   return { px: W / 2 + rx * scale, py: H / 2 + ry * scale, scale, fz }
 }
 
 export default function WordCloud3D({ topics = [], experiences = [], onTopicClick }) {
   const canvasRef = useRef(null)
-  const state     = useRef({
-    rotX: 0.25, rotY: 0.4,
-    dragging: false, lastX: 0, lastY: 0,
+  const state = useRef({
+    rotX: 0.25,
+    rotY: 0.4,
+    dragging: false,
+    lastX: 0,
+    lastY: 0,
     dragDist: 0,
     zoom: 1.0,
     pinchDist: 0,
-    nodes: [], edges: [],
+    nodes: [],
+    edges: [],
     animFrame: null,
-    W: 600, H: 340,
+    W: 600,
+    H: 340,
     dpr: 1,
   })
 
   // 노드 & 엣지 계산
   useEffect(() => {
     if (!topics.length) return
-    const s      = state.current
+    const s = state.current
     const radius = Math.min(s.W, s.H) * 0.38
-    const pos    = fibonacciSphere(topics.length, radius)
+    const pos = fibonacciSphere(topics.length, radius)
 
     s.nodes = topics.map((t, i) => ({
-      ...t, ...pos[i],
+      ...t,
+      ...pos[i],
       fs: Math.max(10, Math.min(30, 8 + t.count * 1.8)),
     }))
 
-    const cooc     = computeCooccurrence(topics, experiences)
+    const cooc = computeCooccurrence(topics, experiences)
     const maxStrength = Math.max(1, ...Object.values(cooc))
     s.edges = Object.entries(cooc)
       .sort((a, b) => b[1] - a[1])
       .slice(0, 40)
       .map(([key, strength]) => {
         const [wa, wb] = key.split('§')
-        const ai = s.nodes.findIndex(n => n.word === wa)
-        const bi = s.nodes.findIndex(n => n.word === wb)
+        const ai = s.nodes.findIndex((n) => n.word === wa)
+        const bi = s.nodes.findIndex((n) => n.word === wb)
         if (ai < 0 || bi < 0) return null
         return { ai, bi, strength, ratio: strength / maxStrength }
       })
@@ -91,16 +97,16 @@ export default function WordCloud3D({ topics = [], experiences = [], onTopicClic
   useEffect(() => {
     const canvas = canvasRef.current
     if (!canvas) return
-    const s   = state.current
-    s.dpr     = window.devicePixelRatio || 1
+    const s = state.current
+    s.dpr = window.devicePixelRatio || 1
 
     const resize = () => {
-      const rect  = canvas.parentElement.getBoundingClientRect()
-      s.W         = rect.width
-      s.H         = rect.height || 360
-      canvas.width  = s.W * s.dpr
+      const rect = canvas.parentElement.getBoundingClientRect()
+      s.W = rect.width
+      s.H = rect.height || 360
+      canvas.width = s.W * s.dpr
       canvas.height = s.H * s.dpr
-      canvas.style.width  = s.W + 'px'
+      canvas.style.width = s.W + 'px'
       canvas.style.height = s.H + 'px'
     }
     resize()
@@ -113,7 +119,7 @@ export default function WordCloud3D({ topics = [], experiences = [], onTopicClic
   const draw = useCallback(() => {
     const canvas = canvasRef.current
     if (!canvas) return
-    const s   = state.current
+    const s = state.current
     const ctx = canvas.getContext('2d')
     const { W, H, dpr, nodes, edges } = s
 
@@ -125,33 +131,33 @@ export default function WordCloud3D({ topics = [], experiences = [], onTopicClic
     if (!nodes.length) return
 
     // 투영
-    const proj = nodes.map(n => ({
+    const proj = nodes.map((n) => ({
       ...n,
       ...project3D(n.x, n.y, n.z, s.rotX, s.rotY, W, H, s.zoom),
     }))
 
     // ── 연결선 그리기 ───────────────────────────────────────
     for (const e of edges) {
-      const a = proj[e.ai], b = proj[e.bi]
+      const a = proj[e.ai],
+        b = proj[e.bi]
       if (!a || !b) continue
 
-      const avgFz     = (a.fz + b.fz) / 2
+      const avgFz = (a.fz + b.fz) / 2
       const depthFade = Math.max(0, 0.7 - avgFz / 600)
-      const alpha     = depthFade * e.ratio * 0.8
+      const alpha = depthFade * e.ratio * 0.8
       if (alpha < 0.02) continue
 
       // 색상: salience 높은 연결은 노란색, 낮은 건 회색-파랑
       const avgSal = (a.salience + b.salience) / 2
-      const lineColor = avgSal >= 0.65
-        ? `rgba(255,229,0,${alpha})`
-        : `rgba(100,140,180,${alpha * 0.8})`
+      const lineColor =
+        avgSal >= 0.65 ? `rgba(255,229,0,${alpha})` : `rgba(100,140,180,${alpha * 0.8})`
 
       ctx.beginPath()
       ctx.moveTo(a.px * dpr, a.py * dpr)
       ctx.lineTo(b.px * dpr, b.py * dpr)
       ctx.strokeStyle = lineColor
-      ctx.lineWidth   = (0.4 + e.ratio * 2.2) * dpr
-      ctx.lineCap     = 'round'
+      ctx.lineWidth = (0.4 + e.ratio * 2.2) * dpr
+      ctx.lineCap = 'round'
       ctx.stroke()
     }
 
@@ -160,14 +166,14 @@ export default function WordCloud3D({ topics = [], experiences = [], onTopicClic
 
     for (const n of sorted) {
       const depthFade = Math.max(0.12, 1 - n.fz / 500)
-      const fs        = n.fs * n.scale
+      const fs = n.fs * n.scale
 
-      ctx.font        = `400 ${fs * dpr}px ${FONT}`
-      ctx.textAlign   = 'center'
+      ctx.font = `400 ${fs * dpr}px ${FONT}`
+      ctx.textAlign = 'center'
       ctx.textBaseline = 'middle'
 
       const [r, g, b] = n.salience >= 0.65 ? YELLOW : WHITE
-      ctx.fillStyle   = `rgba(${r},${g},${b},${depthFade})`
+      ctx.fillStyle = `rgba(${r},${g},${b},${depthFade})`
       ctx.fillText(n.word, n.px * dpr, n.py * dpr)
     }
 
@@ -185,7 +191,7 @@ export default function WordCloud3D({ topics = [], experiences = [], onTopicClic
   useEffect(() => {
     const canvas = canvasRef.current
     if (!canvas) return
-    const handler = e => {
+    const handler = (e) => {
       if (e.ctrlKey) {
         e.preventDefault()
         const s = state.current
@@ -198,24 +204,31 @@ export default function WordCloud3D({ topics = [], experiences = [], onTopicClic
   }, [])
 
   // ── 마우스 이벤트 ───────────────────────────────────────────
-  const onMouseDown = e => {
+  const onMouseDown = (e) => {
     const s = state.current
-    s.dragging = true; s.lastX = e.clientX; s.lastY = e.clientY; s.dragDist = 0
+    s.dragging = true
+    s.lastX = e.clientX
+    s.lastY = e.clientY
+    s.dragDist = 0
   }
-  const onMouseMove = e => {
+  const onMouseMove = (e) => {
     const s = state.current
     if (!s.dragging) return
-    const dx = e.clientX - s.lastX, dy = e.clientY - s.lastY
+    const dx = e.clientX - s.lastX,
+      dy = e.clientY - s.lastY
     s.rotY += dx * 0.007
     s.rotX += dy * 0.007
-    s.rotX  = Math.max(-1.3, Math.min(1.3, s.rotX))
+    s.rotX = Math.max(-1.3, Math.min(1.3, s.rotX))
     s.dragDist += Math.hypot(dx, dy)
-    s.lastX = e.clientX; s.lastY = e.clientY
+    s.lastX = e.clientX
+    s.lastY = e.clientY
   }
-  const onMouseUp = () => { state.current.dragging = false }
+  const onMouseUp = () => {
+    state.current.dragging = false
+  }
 
   // ── 터치 이벤트 ─────────────────────────────────────────────
-  const onTouchStart = e => {
+  const onTouchStart = (e) => {
     const s = state.current
     if (e.touches.length === 2) {
       // 2-finger pinch 시작
@@ -225,10 +238,13 @@ export default function WordCloud3D({ topics = [], experiences = [], onTopicClic
       s.dragging = false
     } else {
       const t = e.touches[0]
-      s.dragging = true; s.lastX = t.clientX; s.lastY = t.clientY; s.dragDist = 0
+      s.dragging = true
+      s.lastX = t.clientX
+      s.lastY = t.clientY
+      s.dragDist = 0
     }
   }
-  const onTouchMove = e => {
+  const onTouchMove = (e) => {
     e.preventDefault()
     const s = state.current
     if (e.touches.length === 2) {
@@ -243,38 +259,51 @@ export default function WordCloud3D({ topics = [], experiences = [], onTopicClic
       s.pinchDist = dist
     } else if (s.dragging) {
       const t = e.touches[0]
-      const dx = t.clientX - s.lastX, dy = t.clientY - s.lastY
+      const dx = t.clientX - s.lastX,
+        dy = t.clientY - s.lastY
       s.rotY += dx * 0.007
       s.rotX += dy * 0.007
-      s.rotX  = Math.max(-1.3, Math.min(1.3, s.rotX))
+      s.rotX = Math.max(-1.3, Math.min(1.3, s.rotX))
       s.dragDist += Math.hypot(dx, dy)
-      s.lastX = t.clientX; s.lastY = t.clientY
+      s.lastX = t.clientX
+      s.lastY = t.clientY
     }
   }
-  const onTouchEnd = () => { const s = state.current; s.dragging = false; s.pinchDist = 0 }
+  const onTouchEnd = () => {
+    const s = state.current
+    s.dragging = false
+    s.pinchDist = 0
+  }
 
   // ── 클릭 히트테스트 ─────────────────────────────────────────
-  const onClick = e => {
-    const s      = state.current
+  const onClick = (e) => {
+    const s = state.current
     const canvas = canvasRef.current
     if (!canvas || !onTopicClick) return
-    if (s.dragDist > 5) { s.dragDist = 0; return } // 드래그 후 클릭 무시
-    const rect   = canvas.getBoundingClientRect()
-    const mx     = e.clientX - rect.left
-    const my     = e.clientY - rect.top
+    if (s.dragDist > 5) {
+      s.dragDist = 0
+      return
+    } // 드래그 후 클릭 무시
+    const rect = canvas.getBoundingClientRect()
+    const mx = e.clientX - rect.left
+    const my = e.clientY - rect.top
     const { W, H, nodes } = s
 
-    let best = null, bestDist = 36
+    let best = null,
+      bestDist = 36
     for (const n of nodes) {
       const { px, py } = project3D(n.x, n.y, n.z, s.rotX, s.rotY, W, H, s.zoom)
       const d = Math.hypot(px - mx, py - my)
-      if (d < bestDist) { bestDist = d; best = n }
+      if (d < bestDist) {
+        bestDist = d
+        best = n
+      }
     }
     if (best) onTopicClick(best)
   }
 
   return (
-    <div style={{ width:'100%', height:360, position:'relative', cursor:'grab' }}>
+    <div style={{ width: '100%', height: 360, position: 'relative', cursor: 'grab' }}>
       <canvas
         ref={canvasRef}
         onMouseDown={onMouseDown}
@@ -285,14 +314,22 @@ export default function WordCloud3D({ topics = [], experiences = [], onTopicClic
         onTouchMove={onTouchMove}
         onTouchEnd={onTouchEnd}
         onClick={onClick}
-        style={{ display:'block', width:'100%', height:'100%', touchAction:'none' }}
+        style={{ display: 'block', width: '100%', height: '100%', touchAction: 'none' }}
       />
-      <div style={{
-        position:'absolute', bottom:8, right:12,
-        fontSize:9, color:'#2a2a28',
-        fontFamily:"'DM Mono',monospace", letterSpacing:'0.15em',
-        pointerEvents:'none',
-      }}>drag to rotate</div>
+      <div
+        style={{
+          position: 'absolute',
+          bottom: 8,
+          right: 12,
+          fontSize: 9,
+          color: '#2a2a28',
+          fontFamily: "'DM Mono',monospace",
+          letterSpacing: '0.15em',
+          pointerEvents: 'none',
+        }}
+      >
+        drag to rotate
+      </div>
     </div>
   )
 }

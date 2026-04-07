@@ -9,9 +9,14 @@ export function middleware(request) {
     return NextResponse.next()
   }
 
-  // 쿠키 확인
+  // 정적 파일은 통과
+  if (pathname.startsWith('/_next') || pathname.endsWith('.webp') || pathname.endsWith('.ico')) {
+    return NextResponse.next()
+  }
+
+  // 쿠키 확인 — 값이 존재하면 인증된 것으로 간주
   const auth = request.cookies.get('kin_auth')
-  if (auth?.value === 'true') {
+  if (auth?.value && auth.value.length > 0) {
     return NextResponse.next()
   }
 
