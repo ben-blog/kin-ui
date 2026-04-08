@@ -12,6 +12,7 @@ import QuestionCards from './components/dashboard/QuestionCards'
 import RelationPanel from './components/dashboard/RelationPanel'
 import GrowthPanel from './components/dashboard/GrowthPanel'
 import ServicePanel from './components/dashboard/ServicePanel'
+import DiaryPanel from './components/dashboard/DiaryPanel'
 import MobileModal from './components/dashboard/MobileModal'
 
 export default function DashboardPage() {
@@ -41,6 +42,7 @@ export default function DashboardPage() {
   const experiences = useMemo(() => data?.recentExperiences || [], [data?.recentExperiences])
   const memory = useMemo(() => data?.memory || {}, [data?.memory])
   const svcStats = useMemo(() => data?.serviceStats || {}, [data?.serviceStats])
+  const diary = useMemo(() => data?.diary || [], [data?.diary])
 
   // 질문 답변 핸들러
   const handleAnswer = useCallback(
@@ -269,6 +271,15 @@ export default function DashboardPage() {
               </ErrorBoundary>
             </div>
           </div>
+          <div style={{ borderTop: `1px solid ${BORDER}`, padding: '32px 0 48px' }}>
+            <ErrorBoundary name="DiaryPanel" fallbackMessage="일기 영역에 문제가 생겼어.">
+              <DiaryPanel
+                diary={diary}
+                crystallizedCount={data?.crystallizedMemoryCount || 0}
+                isMobile={false}
+              />
+            </ErrorBoundary>
+          </div>
         </main>
       ) : (
         /* 모바일 레이아웃 */
@@ -293,9 +304,18 @@ export default function DashboardPage() {
               />
             </ErrorBoundary>
           </div>
-          <div>
+          <div style={{ marginBottom: 36 }}>
             <ErrorBoundary name="GrowthPanel" fallbackMessage="성장 영역에 문제가 생겼어.">
               <GrowthPanel data={data} memory={memory} isMobile={true} />
+            </ErrorBoundary>
+          </div>
+          <div>
+            <ErrorBoundary name="DiaryPanel" fallbackMessage="일기 영역에 문제가 생겼어.">
+              <DiaryPanel
+                diary={diary}
+                crystallizedCount={data?.crystallizedMemoryCount || 0}
+                isMobile={true}
+              />
             </ErrorBoundary>
           </div>
         </main>

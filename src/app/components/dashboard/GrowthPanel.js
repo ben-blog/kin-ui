@@ -26,6 +26,12 @@ export default function GrowthPanel({ data, memory, isMobile }) {
           size={isMobile ? 32 : 36}
         />
         <Num
+          label="확실한 기억"
+          value={data?.crystallizedMemoryCount || 0}
+          color={YELLOW}
+          size={isMobile ? 32 : 36}
+        />
+        <Num
           label="Knowledge"
           value={data?.knowledgeCount || 0}
           color="#fff"
