@@ -13,6 +13,7 @@ import RelationPanel from './components/dashboard/RelationPanel'
 import GrowthPanel from './components/dashboard/GrowthPanel'
 import ServicePanel from './components/dashboard/ServicePanel'
 import DiaryPanel from './components/dashboard/DiaryPanel'
+import KnowledgePanel from './components/dashboard/KnowledgePanel'
 import MobileModal from './components/dashboard/MobileModal'
 
 export default function DashboardPage() {
@@ -43,6 +44,7 @@ export default function DashboardPage() {
   const memory = useMemo(() => data?.memory || {}, [data?.memory])
   const svcStats = useMemo(() => data?.serviceStats || {}, [data?.serviceStats])
   const diary = useMemo(() => data?.diary || [], [data?.diary])
+  const knowledgeDetails = useMemo(() => data?.knowledgeDetails || [], [data?.knowledgeDetails])
 
   // 질문 답변 핸들러
   const handleAnswer = useCallback(
@@ -271,14 +273,31 @@ export default function DashboardPage() {
               </ErrorBoundary>
             </div>
           </div>
-          <div style={{ borderTop: `1px solid ${BORDER}`, padding: '32px 0 48px' }}>
-            <ErrorBoundary name="DiaryPanel" fallbackMessage="일기 영역에 문제가 생겼어.">
-              <DiaryPanel
-                diary={diary}
-                crystallizedCount={data?.crystallizedMemoryCount || 0}
-                isMobile={false}
-              />
-            </ErrorBoundary>
+          <div
+            style={{
+              borderTop: `1px solid ${BORDER}`,
+              display: 'grid',
+              gridTemplateColumns: '1fr 1fr',
+            }}
+          >
+            <div style={{ padding: '32px 28px 48px 0', borderRight: `1px solid ${BORDER}` }}>
+              <ErrorBoundary name="KnowledgePanel" fallbackMessage="지식 영역에 문제가 생겼어.">
+                <KnowledgePanel
+                  knowledgeDetails={knowledgeDetails}
+                  archivedCount={data?.archivedCount || 0}
+                  isMobile={false}
+                />
+              </ErrorBoundary>
+            </div>
+            <div style={{ padding: '32px 0 48px 28px' }}>
+              <ErrorBoundary name="DiaryPanel" fallbackMessage="일기 영역에 문제가 생겼어.">
+                <DiaryPanel
+                  diary={diary}
+                  crystallizedCount={data?.crystallizedMemoryCount || 0}
+                  isMobile={false}
+                />
+              </ErrorBoundary>
+            </div>
           </div>
         </main>
       ) : (
@@ -307,6 +326,15 @@ export default function DashboardPage() {
           <div style={{ marginBottom: 36 }}>
             <ErrorBoundary name="GrowthPanel" fallbackMessage="성장 영역에 문제가 생겼어.">
               <GrowthPanel data={data} memory={memory} isMobile={true} />
+            </ErrorBoundary>
+          </div>
+          <div style={{ marginBottom: 36 }}>
+            <ErrorBoundary name="KnowledgePanel" fallbackMessage="지식 영역에 문제가 생겼어.">
+              <KnowledgePanel
+                knowledgeDetails={knowledgeDetails}
+                archivedCount={data?.archivedCount || 0}
+                isMobile={true}
+              />
             </ErrorBoundary>
           </div>
           <div>

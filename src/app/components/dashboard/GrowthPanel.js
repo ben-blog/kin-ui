@@ -38,6 +38,12 @@ export default function GrowthPanel({ data, memory, isMobile }) {
           size={isMobile ? 32 : 36}
         />
         <Num
+          label="아카이브"
+          value={data?.archivedCount || 0}
+          color="#555"
+          size={isMobile ? 32 : 36}
+        />
+        <Num
           label="메모리 레이어"
           value={memoryLayerCount}
           color="#555"
