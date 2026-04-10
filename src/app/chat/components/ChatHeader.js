@@ -10,12 +10,12 @@ export default function ChatHeader({ mood, onBack, onEnd }) {
       style={{
         position: 'relative',
         zIndex: 10,
-        background: 'rgba(8,8,6,0.96)',
-        borderBottom: '1px solid #1a1a18',
+        background: 'rgba(8,8,6,0.97)',
+        borderBottom: '1px solid #141412',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
-        padding: '10px 16px',
+        padding: '8px 14px',
         flexShrink: 0,
       }}
     >
@@ -26,14 +26,15 @@ export default function ChatHeader({ mood, onBack, onEnd }) {
         style={{
           background: 'transparent',
           border: 'none',
-          color: '#777',
+          color: '#555',
           cursor: 'pointer',
-          fontSize: '18px',
+          fontSize: '16px',
           fontFamily: FONT,
           minWidth: 44,
           minHeight: 44,
           display: 'flex',
           alignItems: 'center',
+          transition: 'color 0.2s',
         }}
         className="back-btn"
       >
@@ -41,13 +42,13 @@ export default function ChatHeader({ mood, onBack, onEnd }) {
       </button>
 
       {/* KIN 아바타 + 무드 */}
-      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
-        <div style={{ position: 'relative', width: 68, height: 68 }}>
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3 }}>
+        <div style={{ position: 'relative', width: 52, height: 52 }}>
           <Image
             src={MOOD_IMAGE[mood] || MOOD_IMAGE.default}
             alt={`KIN 상태: ${MOOD_KO[mood] || '대기 중'}`}
             fill
-            style={{ objectFit: 'contain', transition: 'all 0.35s ease' }}
+            style={{ objectFit: 'contain', transition: 'all 0.4s ease' }}
             priority
           />
         </div>
@@ -55,10 +56,10 @@ export default function ChatHeader({ mood, onBack, onEnd }) {
           aria-live="polite"
           style={{
             fontFamily: FONT,
-            fontSize: '10px',
-            letterSpacing: '0.1em',
+            fontSize: '9px',
+            letterSpacing: '0.2em',
             color: YELLOW,
-            opacity: 0.8,
+            opacity: 0.65,
             textTransform: 'uppercase',
           }}
         >
@@ -73,14 +74,14 @@ export default function ChatHeader({ mood, onBack, onEnd }) {
         aria-label="세션 종료"
         style={{
           background: 'transparent',
-          border: '1px solid #252523',
-          color: '#666',
+          border: '1px solid #1e1e1c',
+          color: '#4a4a48',
           cursor: 'pointer',
-          fontSize: '11px',
+          fontSize: '10px',
           fontFamily: FONT,
           padding: '0 12px',
-          letterSpacing: '0.08em',
-          minHeight: 44,
+          letterSpacing: '0.12em',
+          minHeight: 36,
           minWidth: 44,
           display: 'flex',
           alignItems: 'center',

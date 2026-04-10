@@ -36,9 +36,10 @@ function MessageBubble({ msg }) {
         style={{
           fontFamily: FONT,
           fontSize: '10px',
-          letterSpacing: '0.12em',
+          letterSpacing: '0.15em',
           textTransform: 'uppercase',
-          color: isKin ? YELLOW : '#555',
+          color: isKin ? YELLOW : '#505050',
+          opacity: 0.85,
         }}
       >
         {isKin ? 'KIN' : 'BEN'}
@@ -47,14 +48,19 @@ function MessageBubble({ msg }) {
       {/* 버블 */}
       <div
         style={{
-          maxWidth: '84%',
-          background: isKin ? '#0d0d0b' : '#131311',
-          borderLeft: isKin ? `2px solid ${YELLOW}` : 'none',
-          borderRight: !isKin ? '2px solid #252523' : 'none',
-          padding: '12px 14px',
+          maxWidth: '82%',
+          background: isKin ? '#0c0c0a' : 'transparent',
+          borderLeft: isKin ? `1px solid ${YELLOW}44` : 'none',
+          borderRight: !isKin ? '1px solid #2a2a28' : 'none',
+          borderTop: isKin ? '1px solid #1a1a18' : 'none',
+          borderBottom: isKin ? '1px solid #1a1a18' : 'none',
+          padding: isKin ? '12px 16px' : '8px 14px',
           display: 'flex',
           flexDirection: 'column',
           gap: 8,
+          boxShadow: isKin
+            ? `0 0 24px rgba(255,229,0,0.03), inset 0 0 40px rgba(255,229,0,0.01)`
+            : 'none',
         }}
       >
         {/* 첨부 이미지 */}
@@ -75,12 +81,13 @@ function MessageBubble({ msg }) {
         {text && (
           <p
             style={{
-              color: isKin ? '#f0f0e8' : '#888',
+              color: isKin ? '#eeeee6' : '#b0b0a8',
               fontSize: '15px',
-              lineHeight: '1.8',
+              lineHeight: '1.85',
               margin: 0,
               whiteSpace: 'pre-wrap',
               wordBreak: 'break-word',
+              fontWeight: isKin ? 300 : 300,
             }}
           >
             {text}
@@ -113,12 +120,15 @@ function LoadingIndicator() {
       </span>
       <div
         style={{
-          background: '#0d0d0b',
-          borderLeft: `2px solid ${YELLOW}`,
+          background: '#0c0c0a',
+          borderLeft: `1px solid ${YELLOW}44`,
+          borderTop: '1px solid #1a1a18',
+          borderBottom: '1px solid #1a1a18',
           padding: '14px 16px',
           display: 'flex',
           gap: 6,
           alignItems: 'center',
+          boxShadow: `0 0 24px rgba(255,229,0,0.03)`,
         }}
       >
         {[0, 1, 2].map((i) => (
@@ -157,7 +167,7 @@ export default function MessageList({ messages, loading }) {
         padding: '20px 16px 12px',
         display: 'flex',
         flexDirection: 'column',
-        gap: '18px',
+        gap: '24px',
         position: 'relative',
         zIndex: 1,
         WebkitOverflowScrolling: 'touch',
