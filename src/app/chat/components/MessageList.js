@@ -38,8 +38,8 @@ function MessageBubble({ msg }) {
           fontSize: '10px',
           letterSpacing: '0.15em',
           textTransform: 'uppercase',
-          color: isKin ? YELLOW : '#505050',
-          opacity: 0.85,
+          color: isKin ? YELLOW : '#686864',
+          opacity: 0.9,
         }}
       >
         {isKin ? 'KIN' : 'BEN'}
@@ -81,7 +81,7 @@ function MessageBubble({ msg }) {
         {text && (
           <p
             style={{
-              color: isKin ? '#eeeee6' : '#b0b0a8',
+              color: isKin ? '#eeeee6' : '#d0cfc6',
               fontSize: '15px',
               lineHeight: '1.85',
               margin: 0,
