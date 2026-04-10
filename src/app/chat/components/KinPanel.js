@@ -56,7 +56,8 @@ export default function KinPanel({ mood, logs, onBack, onEnd }) {
         borderRight: '1px solid #141412',
         position: 'relative',
         overflow: 'hidden',
-        flexShrink: 0,
+        height: '100%',
+        boxSizing: 'border-box',
       }}
     >
       {/* 뒤로가기 버튼 */}

@@ -48,15 +48,19 @@ export default function ChatPage() {
   useEffect(() => {
     if (!KIN_API) return
 
+    let active = true // unmount 후 재연결 방지
+    let retryTimer = null
+
     function connect() {
+      if (!active) return
       const es = new EventSource(`${KIN_API}/api/kin/events`)
       eventSourceRef.current = es
 
       es.onmessage = (e) => {
+        if (!active) return
         try {
           const data = JSON.parse(e.data)
-          if (data.type === 'connected') return // 연결 확인 메시지 무시
-          // 로그 추가 (최대 MAX_LOGS 유지)
+          if (data.type === 'connected') return
           setLogs((prev) => {
             const next = [...prev, data]
             return next.length > MAX_LOGS ? next.slice(next.length - MAX_LOGS) : next
@@ -68,14 +72,17 @@ export default function ChatPage() {
 
       es.onerror = () => {
         es.close()
-        // 5초 후 재연결
-        setTimeout(connect, 5000)
+        if (active) {
+          retryTimer = setTimeout(connect, 5000)
+        }
       }
     }
 
     connect()
 
     return () => {
+      active = false
+      clearTimeout(retryTimer)
       eventSourceRef.current?.close()
     }
   }, [])
@@ -312,9 +319,12 @@ export default function ChatPage() {
           .kin-panel-wrap {
             width: 100% !important;
             height: 40% !important;
-            border-right: none !important;
-            border-bottom: 1px solid #141412;
             flex-shrink: 0;
+          }
+          /* KinPanel 내부 div의 inline border-right 해제 + 하단 border 추가 */
+          .kin-panel-wrap > div {
+            border-right: none !important;
+            border-bottom: 1px solid #141412 !important;
           }
           .chat-area {
             height: 60%;

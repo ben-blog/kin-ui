@@ -77,6 +77,24 @@ function MessageBubble({ msg }) {
             }}
           />
         )}
+        {/* 스트리밍 중 빈 상태: 점 3개 */}
+        {isKin && msg.streaming && !text && (
+          <div style={{ display: 'flex', gap: 5, alignItems: 'center', padding: '2px 0' }}>
+            {[0, 1, 2].map((i) => (
+              <div
+                key={i}
+                style={{
+                  width: 4,
+                  height: 4,
+                  borderRadius: '50%',
+                  background: YELLOW,
+                  animation: 'dotPulse 1.1s ease infinite',
+                  animationDelay: `${i * 0.18}s`,
+                }}
+              />
+            ))}
+          </div>
+        )}
         {/* 텍스트 */}
         {text && (
           <p
@@ -87,7 +105,7 @@ function MessageBubble({ msg }) {
               margin: 0,
               whiteSpace: 'pre-wrap',
               wordBreak: 'break-word',
-              fontWeight: isKin ? 300 : 300,
+              fontWeight: 300,
             }}
           >
             {text}
