@@ -55,28 +55,32 @@ export default function LoginPage() {
         @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400&display=swap');
 
         @keyframes fadeUp {
-          from { opacity: 0; transform: translateY(12px); }
+          from { opacity: 0; transform: translateY(16px); }
           to   { opacity: 1; transform: translateY(0); }
         }
         @keyframes shake {
           0%, 100% { transform: translateX(0); }
-          20%       { transform: translateX(-6px); }
-          40%       { transform: translateX(6px); }
+          20%       { transform: translateX(-7px); }
+          40%       { transform: translateX(7px); }
           60%       { transform: translateX(-4px); }
           80%       { transform: translateX(4px); }
         }
         .login-form {
-          animation: fadeUp 0.45s ease forwards;
+          animation: fadeUp 0.5s cubic-bezier(0.22, 1, 0.36, 1) forwards;
         }
         .login-input:focus {
-          border-bottom-color: ${YELLOW} !important;
+          border-color: ${YELLOW}88 !important;
+          box-shadow: 0 0 0 1px ${YELLOW}22 !important;
+          outline: none;
+        }
+        .login-input.error {
+          animation: shake 0.35s ease;
+          border-color: #ff4444 !important;
         }
         .login-btn:not(:disabled):hover {
           background: ${YELLOW} !important;
           color: #080806 !important;
-        }
-        .login-input.error {
-          animation: shake 0.35s ease;
+          border-color: ${YELLOW} !important;
         }
       `}</style>
 
@@ -101,23 +105,20 @@ export default function LoginPage() {
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
-          gap: '28px',
-          width: '260px',
+          gap: '20px',
+          width: '300px',
           position: 'relative',
           zIndex: 1,
           opacity: mounted ? 1 : 0,
         }}
       >
-        {/* KIN 아바타 */}
+        {/* KIN 아바타 — 더 크게 */}
         <div
           style={{
             position: 'relative',
-            width: 80,
-            height: 80,
-            borderRadius: '50%',
-            overflow: 'hidden',
-            border: `1px solid ${YELLOW}22`,
-            background: '#111',
+            width: 140,
+            height: 140,
+            marginBottom: 8,
           }}
         >
           <Image
@@ -133,17 +134,17 @@ export default function LoginPage() {
         <p
           style={{
             color: YELLOW,
-            fontSize: '11px',
-            letterSpacing: '0.35em',
+            fontSize: '10px',
+            letterSpacing: '0.4em',
             margin: 0,
             textTransform: 'uppercase',
-            opacity: 0.9,
+            opacity: 0.8,
           }}
         >
           KIN
         </p>
 
-        {/* 비밀번호 입력 */}
+        {/* 비밀번호 입력 — 박스 스타일 */}
         <input
           type="password"
           className={`login-input${error ? ' error' : ''}`}
@@ -156,18 +157,17 @@ export default function LoginPage() {
           autoFocus
           style={{
             width: '100%',
-            background: 'transparent',
-            border: 'none',
-            borderBottom: `1px solid ${error ? '#ff4444' : '#2a2a28'}`,
+            background: '#0e0e0c',
+            border: `1px solid ${error ? '#ff4444' : '#252523'}`,
+            borderRadius: 0,
             color: '#e8e8e0',
-            fontSize: '18px',
-            padding: '10px 0',
-            outline: 'none',
+            fontSize: '20px',
+            padding: '14px 20px',
             textAlign: 'center',
-            letterSpacing: '8px',
+            letterSpacing: '10px',
             boxSizing: 'border-box',
             fontFamily: FONT,
-            transition: 'border-color 0.2s ease',
+            transition: 'border-color 0.2s ease, box-shadow 0.2s ease',
           }}
         />
 
@@ -175,12 +175,12 @@ export default function LoginPage() {
         <p
           style={{
             color: '#ff4444',
-            fontSize: '12px',
+            fontSize: '11px',
             margin: 0,
-            letterSpacing: '0.08em',
+            letterSpacing: '0.1em',
             opacity: error ? 1 : 0,
             transition: 'opacity 0.2s ease',
-            height: 16,
+            height: 14,
           }}
         >
           아니야.
@@ -193,15 +193,15 @@ export default function LoginPage() {
           className="login-btn"
           style={{
             background: 'transparent',
-            border: `1px solid ${loading || !password ? '#2a2a28' : YELLOW + '88'}`,
-            color: loading || !password ? '#444' : YELLOW,
-            padding: '11px 0',
+            border: `1px solid ${loading || !password ? '#1e1e1c' : '#3a3a38'}`,
+            color: loading || !password ? '#333' : '#aaa',
+            padding: '13px 0',
             cursor: loading || !password ? 'default' : 'pointer',
-            fontSize: '12px',
+            fontSize: '11px',
             fontFamily: FONT,
-            letterSpacing: '0.2em',
+            letterSpacing: '0.25em',
             width: '100%',
-            transition: 'all 0.2s ease',
+            transition: 'all 0.18s ease',
           }}
         >
           {loading ? '···' : '들어가기'}

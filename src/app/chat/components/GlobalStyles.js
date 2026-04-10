@@ -19,8 +19,10 @@ export default function GlobalStyles() {
       }
       .send-btn:hover { color: #FFE500 !important; }
       .attach-btn:hover { color: #FFE500 !important; }
+      .emoji-toggle-btn:hover { color: #FFE500 !important; }
       .back-btn:hover { color: #FFE500 !important; }
       .end-btn:hover { border-color: #444 !important; color: #888 !important; }
+      .emoji-btn:hover { background: #1a1a18 !important; }
       ::-webkit-scrollbar { width: 3px; }
       ::-webkit-scrollbar-track { background: transparent; }
       ::-webkit-scrollbar-thumb { background: #2a2a28; border-radius: 2px; }
