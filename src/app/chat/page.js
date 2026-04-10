@@ -1,6 +1,7 @@
 'use client'
 // src/app/chat/page.js — 채팅 페이지 (좌우 레이아웃 + 스트리밍 + SSE 로그)
 import { useState, useRef, useEffect, useCallback } from 'react'
+import { flushSync } from 'react-dom'
 import { useRouter } from 'next/navigation'
 import { KIN_API } from '../constants'
 import ErrorBoundary from '../components/ErrorBoundary'
@@ -170,15 +171,19 @@ export default function ChatPage() {
 
             if (data.type === 'token') {
               fullReply += data.text
-              // 실시간 토큰 업데이트
-              setMessages((prev) => {
-                const updated = [...prev]
-                updated[kinMsgIndex] = {
-                  ...updated[kinMsgIndex],
-                  content: fullReply,
-                  displayText: fullReply,
-                }
-                return updated
+              // flushSync로 토큰마다 즉시 렌더링 강제 (타이핑 애니메이션 효과)
+              flushSync(() => {
+                setMessages((prev) => {
+                  const updated = [...prev]
+                  if (updated[kinMsgIndex]) {
+                    updated[kinMsgIndex] = {
+                      ...updated[kinMsgIndex],
+                      content: fullReply,
+                      displayText: fullReply,
+                    }
+                  }
+                  return updated
+                })
               })
             } else if (data.type === 'done') {
               const newMood = data.mood || 'default'
@@ -300,15 +305,21 @@ export default function ChatPage() {
 
       {/* 반응형 스타일 */}
       <style>{`
-        /* PC: 좌우 분리 */
+        /* PC: 좌우 분리 — 40% / 60% */
         .kin-panel-wrap {
-          width: 260px;
+          width: 40%;
+          min-width: 240px;
           display: flex;
           flex-direction: column;
           height: 100%;
+          flex-shrink: 0;
         }
         .kin-panel-wrap > div {
           flex: 1;
+        }
+        .chat-area {
+          flex: 1;
+          min-width: 0;
         }
 
         /* 모바일: 상하 분리 */

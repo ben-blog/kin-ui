@@ -2,40 +2,12 @@
 // 채팅 좌측 패널: KIN 이미지 + 감정 상태 + 실시간 로그 스트림
 import { useEffect, useRef } from 'react'
 import Image from 'next/image'
-import { FONT, YELLOW } from '../../constants'
-
-const MOOD_IMAGE = {
-  default: '/kin_default.webp',
-  thinking: '/kin_thinking.webp',
-  happy: '/kin_happy.webp',
-  laughing: '/kin_laughing.webp',
-  sad: '/kin_sad.webp',
-  shocked: '/kin_shocked.webp',
-  excited: '/kin_excited.webp',
-  serious: '/kin_serious.webp',
-  calm: '/kin_calm.webp',
-  energetic: '/kin_energetic.webp',
-  interested: '/kin_interested.webp',
-}
-
-const MOOD_KO = {
-  default: '대기 중',
-  thinking: '생각 중',
-  happy: '기분 좋음',
-  laughing: '웃음',
-  sad: '슬픔',
-  shocked: '놀람',
-  excited: '신남',
-  serious: '진지',
-  calm: '차분',
-  energetic: '에너지',
-  interested: '흥미',
-}
+import { FONT, YELLOW, MOOD_IMAGE, MOOD_KO } from '../../constants'
 
 const LOG_LEVEL_COLOR = {
-  info: '#505048',
-  warn: '#8a7a30',
-  error: '#7a3030',
+  info: '#686860',
+  warn: '#b0a040',
+  error: '#c05050',
 }
 
 export default function KinPanel({ mood, logs, onBack, onEnd }) {
@@ -52,8 +24,8 @@ export default function KinPanel({ mood, logs, onBack, onEnd }) {
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
-        padding: '20px 16px 16px',
-        borderRight: '1px solid #141412',
+        padding: '24px 20px 16px',
+        borderRight: '1px solid #1a1a18',
         position: 'relative',
         overflow: 'hidden',
         height: '100%',
@@ -68,10 +40,10 @@ export default function KinPanel({ mood, logs, onBack, onEnd }) {
         style={{
           position: 'absolute',
           top: 14,
-          left: 12,
+          left: 14,
           background: 'transparent',
           border: 'none',
-          color: '#3a3a38',
+          color: '#555550',
           cursor: 'pointer',
           fontSize: '16px',
           fontFamily: FONT,
@@ -86,9 +58,9 @@ export default function KinPanel({ mood, logs, onBack, onEnd }) {
       <div
         style={{
           position: 'relative',
-          width: 160,
-          height: 160,
-          marginTop: 20,
+          width: 200,
+          height: 200,
+          marginTop: 24,
           flexShrink: 0,
         }}
       >
@@ -106,12 +78,12 @@ export default function KinPanel({ mood, logs, onBack, onEnd }) {
         aria-live="polite"
         style={{
           fontFamily: FONT,
-          fontSize: '9px',
-          letterSpacing: '0.22em',
+          fontSize: '11px',
+          letterSpacing: '0.2em',
           color: YELLOW,
-          opacity: 0.6,
+          opacity: 0.75,
           textTransform: 'uppercase',
-          marginTop: 10,
+          marginTop: 12,
           flexShrink: 0,
         }}
       >
@@ -123,8 +95,8 @@ export default function KinPanel({ mood, logs, onBack, onEnd }) {
         style={{
           width: '100%',
           height: 1,
-          background: '#141412',
-          margin: '16px 0 12px',
+          background: '#1e1e1c',
+          margin: '20px 0 14px',
           flexShrink: 0,
         }}
       />
@@ -138,16 +110,17 @@ export default function KinPanel({ mood, logs, onBack, onEnd }) {
           overflowY: 'auto',
           display: 'flex',
           flexDirection: 'column',
-          gap: 6,
+          gap: 10,
           minHeight: 0,
+          paddingRight: 4,
         }}
       >
         {logs.length === 0 && (
           <p
             style={{
               fontFamily: FONT,
-              fontSize: '10px',
-              color: '#2a2a28',
+              fontSize: '12px',
+              color: '#383834',
               letterSpacing: '0.05em',
               margin: 0,
               textAlign: 'center',
@@ -158,13 +131,14 @@ export default function KinPanel({ mood, logs, onBack, onEnd }) {
           </p>
         )}
         {logs.map((log, i) => (
-          <div key={i} style={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+          <div key={i} style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
             <span
               style={{
                 fontFamily: FONT,
-                fontSize: '9px',
+                fontSize: '10px',
                 color: LOG_LEVEL_COLOR[log.level] || LOG_LEVEL_COLOR.info,
                 letterSpacing: '0.05em',
+                opacity: 0.8,
               }}
             >
               {new Date(log.timestamp).toLocaleTimeString('ko-KR', {
@@ -176,14 +150,14 @@ export default function KinPanel({ mood, logs, onBack, onEnd }) {
             <span
               style={{
                 fontFamily: FONT,
-                fontSize: '10px',
-                color: log.level === 'error' ? '#7a4a4a' : '#404038',
-                letterSpacing: '0.03em',
-                lineHeight: '1.5',
-                wordBreak: 'break-all',
+                fontSize: '12px',
+                color: log.level === 'error' ? '#c06060' : '#787870',
+                letterSpacing: '0.02em',
+                lineHeight: '1.55',
+                wordBreak: 'break-word',
               }}
             >
-              {log.tag} {log.message}
+              <span style={{ color: YELLOW, opacity: 0.6 }}>{log.tag}</span> {log.message}
             </span>
           </div>
         ))}
@@ -197,15 +171,15 @@ export default function KinPanel({ mood, logs, onBack, onEnd }) {
         aria-label="세션 종료"
         style={{
           background: 'transparent',
-          border: '1px solid #1a1a18',
-          color: '#383836',
+          border: '1px solid #222220',
+          color: '#484844',
           cursor: 'pointer',
-          fontSize: '10px',
+          fontSize: '11px',
           fontFamily: FONT,
-          padding: '8px 0',
-          letterSpacing: '0.15em',
+          padding: '9px 0',
+          letterSpacing: '0.18em',
           width: '100%',
-          marginTop: 12,
+          marginTop: 14,
           transition: 'all 0.2s',
           flexShrink: 0,
         }}
