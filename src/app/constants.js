@@ -1,7 +1,4 @@
 // 앱 전역 공유 상수
-export const KIN_API =
-  process.env.NEXT_PUBLIC_KIN_API_URL || 'https://kin-agent-production.up.railway.app'
-
 export const FONT = "'DM Mono', monospace"
 export const YELLOW = '#FFE500'
 export const BG = '#080806'
