@@ -1,7 +1,6 @@
 'use client'
 // 대시보드 데이터 fetch + 캐싱 훅
 import { useState, useCallback, useEffect, useRef } from 'react'
-import { KIN_API } from '../constants'
 
 /** 대시보드 데이터를 가져오고, 답변 후에는 캐시된 데이터와 머지하는 훅 */
 export default function useDashboard() {
@@ -12,7 +11,7 @@ export default function useDashboard() {
   const load = useCallback(async () => {
     setLoading(true)
     try {
-      const res = await fetch(`${KIN_API}/api/kin/dashboard`)
+      const res = await fetch('/api/kin/dashboard')
       const d = await res.json()
       cacheRef.current = d
       setData(d)
@@ -26,7 +25,7 @@ export default function useDashboard() {
   /** 답변 후 경량 리프레시: 전체 데이터를 가져오되 로딩 스피너 없이 */
   const softRefresh = useCallback(async () => {
     try {
-      const res = await fetch(`${KIN_API}/api/kin/dashboard`)
+      const res = await fetch('/api/kin/dashboard')
       const d = await res.json()
       cacheRef.current = d
       setData(d)
@@ -38,7 +37,7 @@ export default function useDashboard() {
   /** 질문에 답변/스킵 */
   const submitAnswer = useCallback(
     async (id, answer, skip = false) => {
-      await fetch(`${KIN_API}/api/kin/answer-request/${id}`, {
+      await fetch(`/api/kin/answer-request/${id}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(skip ? { skip: true } : { answer }),
@@ -60,7 +59,7 @@ export default function useDashboard() {
 
   /** 서비스 리플렉션 실행 */
   const runReflection = useCallback(async () => {
-    await fetch(`${KIN_API}/api/kin/service-reflection`, {
+    await fetch('/api/kin/service-reflection', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ limit: 50 }),

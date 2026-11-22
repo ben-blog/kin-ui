@@ -4,7 +4,18 @@ import { useState, useCallback } from 'react'
 import { FONT, YELLOW, BORDER } from '../../constants'
 import { SectionTitle, Label } from '../ui'
 
-const KIN_API = process.env.NEXT_PUBLIC_KIN_API_URL || 'https://kin-agent-production.up.railway.app'
+// kin-agent POST /api/web-learning/run returns { message, character } and keeps running
+// in the background. It does not send `started`.
+function runStatusLabel(payload) {
+  if (!payload || typeof payload !== 'object') return '실행 요청 실패'
+  if (payload.started === false) return '이미 실행 중'
+  const message = typeof payload.message === 'string' ? payload.message : ''
+  if (/이미|already/i.test(message)) return '이미 실행 중'
+  if (payload.started === true || message || payload.character) {
+    return '시작됨 — 로그 패널에서 진행 상황을 확인하세요.'
+  }
+  return '실행 요청 실패'
+}
 
 // 세션 상태별 색상
 const STATUS_COLOR = {
@@ -180,13 +191,17 @@ export default function WebLearningPanel({
     setRunning(true)
     setRunResult(null)
     try {
-      const res = await fetch(`${KIN_API}/api/web-learning/run`, {
+      const res = await fetch('/api/web-learning/run', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ character: 'kin', force: true }),
       })
-      const d = await res.json()
-      setRunResult(d.started ? '시작됨 — 로그 패널에서 진행 상황을 확인하세요.' : '이미 실행 중')
+      const d = await res.json().catch(() => null)
+      if (!res.ok || !d) {
+        setRunResult('실행 요청 실패')
+        return
+      }
+      setRunResult(runStatusLabel(d))
       if (onRunNow) onRunNow()
     } catch {
       setRunResult('실행 요청 실패')
@@ -198,7 +213,7 @@ export default function WebLearningPanel({
   const handleTopicToggle = useCallback(
     async (id, enabled) => {
       try {
-        await fetch(`${KIN_API}/api/web-learning/topics/${id}`, {
+        await fetch(`/api/web-learning/topics/${id}`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ enabled }),

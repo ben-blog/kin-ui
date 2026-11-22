@@ -1,6 +1,7 @@
 // src/app/api/auth/route.js
 import { NextResponse } from 'next/server'
 import crypto from 'crypto'
+import { createSessionToken, SESSION_COOKIE, sessionCookieOptions } from '../../../lib/session'
 
 // 간단한 인메모리 rate limiter (IP별)
 const loginAttempts = new Map()
@@ -30,6 +31,16 @@ function checkRateLimit(ip) {
   return true
 }
 
+function passwordMatches(input, expected) {
+  if (typeof input !== 'string' || typeof expected !== 'string' || expected.length === 0) {
+    return false
+  }
+  const provided = Buffer.from(input)
+  const actual = Buffer.from(expected)
+  if (provided.length !== actual.length) return false
+  return crypto.timingSafeEqual(provided, actual)
+}
+
 // 오래된 엔트리 정리 (메모리 누수 방지)
 setInterval(() => {
   const now = Date.now()
@@ -47,23 +58,35 @@ export async function POST(request) {
     return NextResponse.json({ ok: false, error: '너무 많은 시도. 잠시 후 다시.' }, { status: 429 })
   }
 
-  const { password } = await request.json()
+  let body
+  try {
+    body = await request.json()
+  } catch {
+    return NextResponse.json({ ok: false }, { status: 400 })
+  }
 
+  const password = body?.password
   if (!password || typeof password !== 'string') {
     return NextResponse.json({ ok: false }, { status: 400 })
   }
 
-  if (password === process.env.PASSWORD) {
-    // 랜덤 토큰 생성 (정적 문자열 대신)
-    const token = crypto.randomBytes(32).toString('hex')
+  const authSecret = process.env.AUTH_SECRET
+  if (typeof authSecret !== 'string' || authSecret.length === 0) {
+    console.error('[auth] AUTH_SECRET is not configured')
+    return NextResponse.json({ ok: false, error: 'unavailable' }, { status: 503 })
+  }
+
+  if (passwordMatches(password, process.env.PASSWORD)) {
+    let token
+    try {
+      token = await createSessionToken(authSecret)
+    } catch {
+      console.error('[auth] failed to issue session')
+      return NextResponse.json({ ok: false, error: 'unavailable' }, { status: 503 })
+    }
 
     const response = NextResponse.json({ ok: true })
-    response.cookies.set('kin_auth', token, {
-      httpOnly: true,
-      secure: true,
-      sameSite: 'strict',
-      maxAge: 60 * 60 * 24 * 30, // 30일
-    })
+    response.cookies.set(SESSION_COOKIE, token, sessionCookieOptions())
     return response
   }
 

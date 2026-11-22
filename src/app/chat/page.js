@@ -3,7 +3,6 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
 import { flushSync } from 'react-dom'
 import { useRouter } from 'next/navigation'
-import { KIN_API } from '../constants'
 import ErrorBoundary from '../components/ErrorBoundary'
 import GlobalStyles from './components/GlobalStyles'
 import KinPanel from './components/KinPanel'
@@ -47,14 +46,12 @@ export default function ChatPage() {
 
   // SSE 로그 연결
   useEffect(() => {
-    if (!KIN_API) return
-
     let active = true // unmount 후 재연결 방지
     let retryTimer = null
 
     function connect() {
       if (!active) return
-      const es = new EventSource(`${KIN_API}/api/kin/events`)
+      const es = new EventSource('/api/kin/events')
       eventSourceRef.current = es
 
       es.onmessage = (e) => {
@@ -135,7 +132,7 @@ export default function ChatPage() {
     ])
 
     try {
-      const res = await fetch(`${KIN_API}/api/kin/chat`, {
+      const res = await fetch('/api/kin/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
